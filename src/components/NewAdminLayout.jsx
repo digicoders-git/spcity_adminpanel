@@ -13,7 +13,8 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  Clock
+  Clock,
+  FileText
 } from 'lucide-react';
 
 const NewAdminLayout = () => {
@@ -64,6 +65,7 @@ const NewAdminLayout = () => {
       ]
     },
     { icon: DollarSign, label: 'Manage Payments', path: '/admin/payments' },
+    { icon: FileText, label: 'Manage Invoices', path: '/admin/invoices' },
     { icon: User, label: 'Profile', path: '/admin/profile' },
     { icon: Lock, label: 'Change Password', path: '/admin/change-password' }
   ];

@@ -13,6 +13,7 @@ import AssociateManagement from './pages/AssociateManagement';
 import ProjectManagement from './pages/ProjectManagement';
 import SiteManagement from './pages/SiteManagement';
 import PaymentManagement from './pages/PaymentManagement';
+import InvoiceManagement from './pages/InvoiceManagement';
 import Profile from './pages/Profile';
 import ChangePassword from './pages/ChangePassword';
 
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="projects" element={<ProjectManagement />} />
         <Route path="sites" element={<SiteManagement />} />
         <Route path="payments" element={<PaymentManagement />} />
+        <Route path="invoices" element={<InvoiceManagement />} />
         <Route path="profile" element={<Profile />} />
         <Route path="change-password" element={<ChangePassword />} />
       </Route>

@@ -1,3 +1,5 @@
+// const API_BASE_URL = 'http://localhost:5000/api';
+// const API_BASE_URL = 'https://sp-city-backend.onrender.com/api';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sp-city-backend.onrender.com/api';
 
 // Get auth token
@@ -282,4 +284,84 @@ export const commissionsAPI = {
   approveProject: (projectId) => apiRequest(`/commissions/approve-project/${projectId}`, {
     method: 'PUT',
   }),
+};
+
+// Invoices APIs
+// ================= INVOICES APIs (FIXED & CLEAN) =================
+
+export const invoicesAPI = {
+  // Get all invoices with pagination & filters
+  getAll: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await apiRequest(`/invoices${query ? `?${query}` : ''}`);
+
+    // 🔐 Normalize response (important)
+    return {
+      success: true,
+      data: res.data || res.invoices || [],
+      page: res.page || 1,
+      pages: res.pages || 1,
+      total: res.total || res.count || 0,
+    };
+  },
+
+  // Get single invoice
+  getById: (id) => apiRequest(`/invoices/${id}`),
+
+  // Create invoice (clean payload only)
+  create: (invoiceData) =>
+    apiRequest('/invoices', {
+      method: 'POST',
+      body: {
+        customerName: invoiceData.customerName,
+        customerPhone: invoiceData.customerPhone,
+        customerEmail: invoiceData.customerEmail,
+        project: invoiceData.project,
+        items: invoiceData.items,
+        issueDate: invoiceData.issueDate || new Date(),
+        dueDate: invoiceData.dueDate,
+        status: invoiceData.status || 'Draft',
+        taxRate: invoiceData.taxRate || 0,
+        subtotal: invoiceData.subtotal,
+        taxAmount: invoiceData.taxAmount,
+        total: invoiceData.total,
+        notes: invoiceData.notes,
+      },
+    }),
+
+  // Update invoice
+  update: (id, invoiceData) =>
+    apiRequest(`/invoices/${id}`, {
+      method: 'PUT',
+      body: {
+        customerName: invoiceData.customerName,
+        customerPhone: invoiceData.customerPhone,
+        customerEmail: invoiceData.customerEmail,
+        project: invoiceData.project,
+        items: invoiceData.items,
+        dueDate: invoiceData.dueDate,
+        status: invoiceData.status,
+        taxRate: invoiceData.taxRate,
+        subtotal: invoiceData.subtotal,
+        taxAmount: invoiceData.taxAmount,
+        total: invoiceData.total,
+        notes: invoiceData.notes,
+      },
+    }),
+
+  // Delete invoice
+  delete: (id) =>
+    apiRequest(`/invoices/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Update invoice status (SAFE)
+  updateStatus: (id, status) =>
+    apiRequest(`/invoices/${id}/status`, {
+      method: 'PUT',
+      body: { status },
+    }),
+
+  // Invoice stats (optional dashboard)
+  getStats: () => apiRequest('/invoices/stats'),
 };
