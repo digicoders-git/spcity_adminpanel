@@ -110,6 +110,25 @@ const AssociateManagement = () => {
     });
   };
 
+  const generateCredentials = (name) => {
+    if (!name || modalType === 'edit') return;
+    
+    // Generate Username: firstname + random 4 digits
+    const base = name.toLowerCase().split(' ')[0].replace(/[^a-z0-9]/g, '');
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const username = `${base}${randomNum}`;
+    
+    // Generate Password: base + @ + 3 random digits
+    const password = `${base}@${Math.floor(100 + Math.random() * 900)}`;
+    
+    setFormData(prev => ({
+      ...prev,
+      username: username,
+      password: password,
+      confirmPassword: password
+    }));
+  };
+
   const handlePermissionChange = (permission) => {
     setFormData(prev => ({
       ...prev,
@@ -167,10 +186,6 @@ const AssociateManagement = () => {
 
     try {
       if (modalType === 'add') {
-        if (formData.password !== formData.confirmPassword) {
-          return toast.error('Passwords do not match');
-        }
-
         const response = await associatesAPI.create(formData);
         if (response.success) {
           toast.success('Associate added successfully');
@@ -472,7 +487,10 @@ const AssociateManagement = () => {
                       type="text"
                       name="name"
                       value={formData.name}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        if (modalType === 'add') generateCredentials(e.target.value);
+                      }}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                       required
                     />
@@ -510,35 +528,26 @@ const AssociateManagement = () => {
                       name="username"
                       value={formData.username || ''}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-50 font-medium"
                       required={modalType === 'add'}
                       disabled={modalType === 'edit'}
+                      placeholder="Auto-generated"
                     />
                   </div>
                 </div>
 
                 {modalType === 'add' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
                       <input
-                        type="password"
+                        type="text"
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-50 font-medium"
                         required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-                        required
+                        placeholder="Auto-generated"
                       />
                     </div>
                   </div>
@@ -739,28 +748,20 @@ const AssociateManagement = () => {
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 w-full">
                           <Key className="w-5 h-5 text-yellow-600" />
-                          <div>
+                          <div className="flex-1">
                             <p className="text-sm text-gray-600">Password</p>
-                            <p className="font-mono text-sm bg-white px-3 py-1 rounded border border-yellow-300">
-                              {showPassword ? (viewAssociate.plainPassword || 'Password hidden for security') : '••••••••'}
+                            <p className="font-mono text-xl font-bold text-red-600 tracking-wider bg-white px-4 py-2 rounded-lg border border-yellow-200 mt-1">
+                              {viewAssociate.plainPassword || 'Not Set'}
                             </p>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="p-2 hover:bg-yellow-100 rounded-lg transition-colors"
-                          title={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showPassword ? <EyeOff className="w-5 h-5 text-yellow-600" /> : <Eye className="w-5 h-5 text-yellow-600" />}
-                        </button>
                       </div>
                     </div>
                     <p className="text-xs text-yellow-700 mt-3 flex items-center">
                       <Shield className="w-3 h-3 mr-1" />
-                      {viewAssociate.plainPassword ? 'Share these credentials securely with the associate' : 'Password is only visible when first created'}
+                      Associate can login using these auto-generated credentials.
                     </p>
                   </div>
                 </div>

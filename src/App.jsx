@@ -55,6 +55,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={
