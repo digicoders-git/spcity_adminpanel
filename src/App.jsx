@@ -33,6 +33,7 @@ import AssociateReward from './pages/associate/AssociateReward';
 
 import './App.css';
 
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
   
