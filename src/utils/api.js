@@ -6,7 +6,7 @@ const getAuthToken = () => {
 };
 
 // API request helper
-const apiRequest = async (endpoint, options = {}) => {
+export const apiRequest = async (endpoint, options = {}) => {
   const token = getAuthToken();
   const url = `${API_BASE_URL}${endpoint}`;
   
@@ -28,7 +28,9 @@ const apiRequest = async (endpoint, options = {}) => {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || 'API request failed');
+    const error = new Error(data.message || 'API request failed');
+    error.response = { data }; // Attach data for detailed error handling
+    throw error;
   }
 
   return data;
@@ -66,6 +68,8 @@ export const dashboardAPI = {
   getLeadsTrend: (period = '180') => apiRequest(`/dashboard/charts/leads-trend?period=${period}`),
   getRevenueTrend: (period = '180') => apiRequest(`/dashboard/charts/revenue-trend?period=${period}`),
   getProjectStatus: () => apiRequest('/dashboard/charts/project-status'),
+  getAssociatePerformance: () => apiRequest('/dashboard/associate-performance'),
+  getRecentActivities: () => apiRequest('/dashboard/recent-activities'),
 };
 
 // Associates APIs
@@ -281,6 +285,46 @@ export const commissionsAPI = {
   
   approveProject: (projectId) => apiRequest(`/commissions/approve-project/${projectId}`, {
     method: 'PUT',
+  }),
+};
+
+// Expense APIs
+export const expensesAPI = {
+  getAll: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return apiRequest(`/expenses${query ? `?${query}` : ''}`);
+  },
+  getAdvanceSummary: (associateId) => apiRequest(`/expenses/advance-summary/${associateId}`),
+  create: (expenseData) => apiRequest('/expenses', {
+    method: 'POST',
+    body: expenseData,
+  }),
+  update: (id, expenseData) => apiRequest(`/expenses/${id}`, {
+    method: 'PUT',
+    body: expenseData,
+  }),
+  delete: (id) => apiRequest(`/expenses/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// Reward APIs
+export const rewardsAPI = {
+  getAll: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return apiRequest(`/rewards${query ? `?${query}` : ''}`);
+  },
+  getMyRewards: () => apiRequest('/rewards/my-rewards'),
+  create: (rewardData) => apiRequest('/rewards', {
+    method: 'POST',
+    body: rewardData,
+  }),
+  update: (id, rewardData) => apiRequest(`/rewards/${id}`, {
+    method: 'PUT',
+    body: rewardData,
+  }),
+  delete: (id) => apiRequest(`/rewards/${id}`, {
+    method: 'DELETE',
   }),
 };
 

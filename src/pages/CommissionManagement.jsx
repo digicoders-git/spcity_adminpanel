@@ -44,7 +44,7 @@ import {
   Input
 } from '@chakra-ui/react';
 import { CheckCircle, XCircle, Clock, DollarSign, Users, TrendingUp } from 'lucide-react';
-import { commissionsAPI } from '../utils/api';
+import { commissionsAPI, expensesAPI } from '../utils/api';
 
 const CommissionManagement = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -57,6 +57,8 @@ const CommissionManagement = () => {
   const [filters, setFilters] = useState({ status: '', page: 1, limit: 10 });
   const toast = useToast();
   const cancelRef = React.useRef();
+  const [advanceSummary, setAdvanceSummary] = useState({ totalAdvance: 0 });
+  const [fetchingAdvance, setFetchingAdvance] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -113,10 +115,23 @@ const CommissionManagement = () => {
     return icons[status] || <Clock className="w-4 h-4" />;
   };
 
-  const handleProcessWithdrawal = (withdrawal) => {
+  const handleProcessWithdrawal = async (withdrawal) => {
     setSelectedWithdrawal(withdrawal);
     setProcessData({ status: '', notes: '' });
     onOpen();
+    
+    // Fetch advance summary
+    try {
+      setFetchingAdvance(true);
+      const res = await expensesAPI.getAdvanceSummary(withdrawal.associate?._id || withdrawal.associate);
+      if (res.success) {
+        setAdvanceSummary(res);
+      }
+    } catch (error) {
+      console.error('Failed to fetch advance summary');
+    } finally {
+      setFetchingAdvance(false);
+    }
   };
 
   const handleConfirmProcess = () => {
@@ -233,85 +248,111 @@ const CommissionManagement = () => {
         </HStack>
       </Box>
 
-      {/* Withdrawal Requests Table */}
+      {/* Commission & Withdrawal Tabs */}
       <div className="card">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">Withdrawal Requests</h2>
-          <p className="text-gray-600">Manage associate withdrawal requests</p>
-        </div>
-        
-        <Box overflowX="auto">
-          <Table variant="simple">
-            <Thead>
-              <Tr>
-                <Th>Associate</Th>
-                <Th>Amount</Th>
-                <Th>Method</Th>
-                <Th>Account Details</Th>
-                <Th>Date Requested</Th>
-                <Th>Status</Th>
-                <Th>Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {withdrawals.map((withdrawal) => (
-                <Tr key={withdrawal._id}>
-                  <Td>
-                    <VStack align="start" spacing={1}>
-                      <Text fontWeight="medium">{withdrawal.associate?.name}</Text>
-                      <Text fontSize="sm" color="gray.500">{withdrawal.associate?.email}</Text>
-                    </VStack>
-                  </Td>
-                  <Td>
-                    <Text fontWeight="medium" color="green.600">
-                      {formatCurrency(withdrawal.amount)}
-                    </Text>
-                  </Td>
-                  <Td>{withdrawal.method}</Td>
-                  <Td>
-                    <Text fontSize="sm" maxW="200px" isTruncated>
-                      {withdrawal.accountDetails}
-                    </Text>
-                  </Td>
-                  <Td>{new Date(withdrawal.createdAt).toLocaleDateString()}</Td>
-                  <Td>
-                    <Badge 
-                      colorScheme={getStatusColor(withdrawal.status)}
-                      display="flex"
-                      alignItems="center"
-                      gap={1}
-                      w="fit-content"
-                    >
-                      {getStatusIcon(withdrawal.status)}
-                      {withdrawal.status}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    {withdrawal.status === 'Pending' && (
-                      <button
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                        onClick={() => handleProcessWithdrawal(withdrawal)}
-                      >
-                        Process
-                      </button>
-                    )}
-                    {withdrawal.status !== 'Pending' && (
-                      <Text fontSize="sm" color="gray.500">
-                        Processed by {withdrawal.processedBy?.name}
-                      </Text>
-                    )}
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </Box>
+        <Tabs colorScheme="red">
+          <TabList>
+            <Tab fontWeight="bold">Withdrawal Requests ({withdrawals.length})</Tab>
+            <Tab fontWeight="bold">System Commission History</Tab>
+          </TabList>
 
-        {withdrawals.length === 0 && (
-          <Box textAlign="center" py={8}>
-            <Text color="gray.500">No withdrawal requests found</Text>
-          </Box>
-        )}
+          <TabPanels>
+            <TabPanel p={0} pt={4}>
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-gray-800">Withdrawal Requests</h2>
+                <p className="text-gray-500 text-sm">Manage associate withdrawal requests</p>
+              </div>
+              
+              <Box overflowX="auto">
+                <Table variant="simple">
+                  <Thead>
+                    <Tr>
+                      <Th>Associate</Th>
+                      <Th>Amount</Th>
+                      <Th>Method</Th>
+                      <Th>Account Details</Th>
+                      <Th>Date Requested</Th>
+                      <Th>Status</Th>
+                      <Th>Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {withdrawals.map((withdrawal) => (
+                      <Tr key={withdrawal._id}>
+                        <Td>
+                          <VStack align="start" spacing={1}>
+                            <Text fontWeight="medium" color="gray.800">{withdrawal.associate?.name}</Text>
+                            <Text fontSize="xs" color="gray.500">{withdrawal.associate?.email}</Text>
+                            <Text fontSize="xs" fontFamily="mono" color="blue.500">{withdrawal.associate?.phone}</Text>
+                          </VStack>
+                        </Td>
+                        <Td>
+                          <Text fontWeight="black" color="green.600">
+                            {formatCurrency(withdrawal.amount)}
+                          </Text>
+                        </Td>
+                        <Td>
+                          <Badge colorScheme="blue" variant="subtle" px={2} borderRadius="full">
+                            {withdrawal.method}
+                          </Badge>
+                        </Td>
+                        <Td>
+                          <Text fontSize="xs" maxW="200px" color="gray.600">
+                            {withdrawal.accountDetails}
+                          </Text>
+                        </Td>
+                        <Td fontSize="sm" color="gray.600">{new Date(withdrawal.createdAt).toLocaleDateString()}</Td>
+                        <Td>
+                          <Badge 
+                            colorScheme={getStatusColor(withdrawal.status)}
+                            display="flex"
+                            alignItems="center"
+                            gap={1}
+                            w="fit-content"
+                            variant="solid"
+                            px={2}
+                            borderRadius="full"
+                            fontSize="10px"
+                          >
+                            {getStatusIcon(withdrawal.status)}
+                            {withdrawal.status}
+                          </Badge>
+                        </Td>
+                        <Td>
+                          {withdrawal.status === 'Pending' && (
+                            <button
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-all active:scale-95"
+                              onClick={() => handleProcessWithdrawal(withdrawal)}
+                            >
+                              Process
+                            </button>
+                          )}
+                          {withdrawal.status !== 'Pending' && (
+                            <VStack align="start" spacing={0}>
+                               <Text fontSize="xs" fontWeight="bold" color="gray.700">Processed By:</Text>
+                               <Text fontSize="xs" color="blue.600">{withdrawal.processedBy?.name || 'Admin'}</Text>
+                            </VStack>
+                          )}
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </Box>
+
+              {withdrawals.length === 0 && (
+                <Box textAlign="center" py={12} bg="gray.50" borderRadius="xl" mt={4}>
+                  <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <Text color="gray.500" fontWeight="medium">No pending withdrawal requests found</Text>
+                </Box>
+              )}
+            </TabPanel>
+
+            <TabPanel p={0} pt={4}>
+               <AllCommissionsTable formatCurrency={formatCurrency} />
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </div>
 
       {/* Process Withdrawal Modal */}
@@ -323,12 +364,32 @@ const CommissionManagement = () => {
           <ModalBody pb={6}>
             {selectedWithdrawal && (
               <VStack spacing={4} align="start">
-                <Box w="full" p={4} bg="gray.50" borderRadius="md">
-                  <Text><strong>Associate:</strong> {selectedWithdrawal.associate?.name}</Text>
-                  <Text><strong>Amount:</strong> {formatCurrency(selectedWithdrawal.amount)}</Text>
-                  <Text><strong>Method:</strong> {selectedWithdrawal.method}</Text>
-                  <Text><strong>Account Details:</strong> {selectedWithdrawal.accountDetails}</Text>
-                  <Text><strong>Reference:</strong> {selectedWithdrawal.reference}</Text>
+                <Box w="full" p={4} bg="gray.100" borderRadius="xl" border="1px" borderColor="gray-200 shadow-inner">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Text fontSize="xs" fontWeight="black" color="gray.400" textTransform="uppercase">Associate</Text>
+                      <Text fontWeight="bold">{selectedWithdrawal.associate?.name}</Text>
+                    </div>
+                    <div>
+                      <Text fontSize="xs" fontWeight="black" color="gray.400" textTransform="uppercase">Requested Amnt</Text>
+                      <Text fontWeight="black" color="blue.600">{formatCurrency(selectedWithdrawal.amount)}</Text>
+                    </div>
+                    <div className="col-span-2 border-t border-gray-200 mt-2 pt-2">
+                       <HStack justify="space-between" align="center">
+                          <div>
+                            <Text fontSize="xs" fontWeight="black" color="gray.400" textTransform="uppercase">Advance Deductible</Text>
+                            {fetchingAdvance ? <Spinner size="xs" /> : (
+                              <Text fontWeight="bold" color="red.600">{formatCurrency(advanceSummary.totalAdvance || 0)}</Text>
+                            )}
+                          </div>
+                          <div className="text-right">
+                             <Text fontSize="xs" fontWeight="black" color="gray.400" textTransform="uppercase">Net Payable</Text>
+                             <Text fontWeight="black" fontSize="xl" color="green.600">{formatCurrency(Math.max(0, selectedWithdrawal.amount - (advanceSummary.totalAdvance || 0)))}</Text>
+                          </div>
+                       </HStack>
+                    </div>
+                  </div>
+                  <Text mt={3} fontSize="xs" color="gray.500 italic">Method: {selectedWithdrawal.method} | Ref: {selectedWithdrawal.reference}</Text>
                 </Box>
                 
                 <FormControl isRequired>
@@ -407,6 +468,103 @@ const CommissionManagement = () => {
         </AlertDialogOverlay>
       </AlertDialog>
     </div>
+  );
+};
+
+const AllCommissionsTable = ({ formatCurrency }) => {
+  const [commissions, setCommissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
+
+  useEffect(() => {
+    fetchCommissions();
+  }, []);
+
+  const fetchCommissions = async () => {
+    try {
+      setLoading(true);
+      const res = await commissionsAPI.getAll();
+      setCommissions(res.data || []);
+    } catch (error) {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to fetch commissions', 
+        status: 'error',
+        duration: 3000
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box py={10} textAlign="center">
+        <Spinner size="lg" color="red.500" thickness="4px" />
+        <Text mt={2} color="gray.500">Loading commission data...</Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box overflowX="auto">
+      <Table variant="simple">
+        <Thead>
+          <Tr>
+            <Th>Associate</Th>
+            <Th>Client</Th>
+            <Th>Project</Th>
+            <Th>Sale Amount</Th>
+            <Th>Rate</Th>
+            <Th>Commission</Th>
+            <Th>Date</Th>
+            <Th>Status</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {commissions.map((comm) => (
+            <Tr key={comm._id}>
+              <Td>
+                <VStack align="start" spacing={0}>
+                  <Text fontWeight="bold" color="gray.800">{comm.associate?.name || 'Self/Admin'}</Text>
+                  <Badge variant="subtle" colorScheme="purple" fontSize="xs" borderRadius="full" px={2}>
+                    {comm.associateRank || 'ADMIN'}
+                  </Badge>
+                </VStack>
+              </Td>
+              <Td fontSize="sm" color="gray.600">{comm.payment?.customerName}</Td>
+              <Td fontSize="sm" color="gray.600">{comm.project?.name}</Td>
+              <Td fontSize="sm" fontWeight="medium">{formatCurrency(comm.saleAmount)}</Td>
+              <Td fontSize="sm">
+                <Badge variant="outline" colorScheme="blue" borderRadius="md">{comm.commissionRate}%</Badge>
+              </Td>
+              <Td>
+                <Text fontWeight="black" color="green.600">{formatCurrency(comm.commissionAmount)}</Text>
+              </Td>
+              <Td fontSize="xs" color="gray.500">{new Date(comm.earnedDate).toLocaleDateString()}</Td>
+              <Td>
+                <Badge 
+                  colorScheme={comm.status === 'Earned' ? 'green' : 'orange'} 
+                  variant="solid" 
+                  borderRadius="full" 
+                  px={2} 
+                  fontSize="10px"
+                  textTransform="uppercase"
+                >
+                    {comm.status}
+                </Badge>
+              </Td>
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+      {commissions.length === 0 && (
+        <Box textAlign="center" py={12} bg="gray.50" borderRadius="xl" mt={4}>
+          <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <Text color="gray.500" fontWeight="medium">No commission records found in the system</Text>
+        </Box>
+      )}
+    </Box>
   );
 };
 

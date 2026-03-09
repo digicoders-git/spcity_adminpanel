@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Users, Building, DollarSign, TrendingUp, Eye, Phone, CheckCircle, Clock, MapPin, Calendar, Star, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-import { dashboardAPI, leadsAPI } from '../../utils/api';
+import { dashboardAPI, leadsAPI, expensesAPI, commissionsAPI, siteVisitsAPI } from '../../utils/api';
 
 const AssociateDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState([
     { title: 'My Leads', value: '0', icon: Users, color: 'bg-gradient-to-r from-red-600 to-black', change: '+0%', desc: 'Total leads generated' },
-    { title: 'Site Visits', value: '0', icon: MapPin, color: 'bg-gradient-to-r from-red-600 to-black', change: '+0%', desc: 'Visits completed' },
-    { title: 'Deals Closed', value: '0', icon: CheckCircle, color: 'bg-gradient-to-r from-red-600 to-black', change: '+0%', desc: 'Successful closures' },
-    { title: 'Commission', value: '₹0', icon: DollarSign, color: 'bg-gradient-to-r from-red-600 to-black', change: '+0%', desc: 'Total earnings' }
+    { title: 'Total Commission', value: '₹0', icon: TrendingUp, color: 'bg-gradient-to-r from-red-600 to-black', change: '+0%', desc: 'Gross earnings' },
+    { title: 'Current Advance', value: '₹0', icon: DollarSign, color: 'bg-gradient-to-r from-red-600 to-black', change: '+0%', desc: 'Pending advance amount' },
+    { title: 'Available Payout', value: '₹0', icon: CheckCircle, color: 'bg-gradient-to-r from-red-600 to-black', change: '+0%', desc: 'Ready for withdrawal' }
   ]);
   const [recentLeads, setRecentLeads] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [upcomingSiteVisits, setUpcomingSiteVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState({
     performance: { leads: [], visits: [], deals: [], categories: [] },
@@ -28,70 +30,129 @@ const AssociateDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsData, leadsData, leadsTrendData] = await Promise.all([
+      const [statsRes, leadsRes, performanceRes, activityRes, siteVisitsRes] = await Promise.all([
         dashboardAPI.getStats(),
         leadsAPI.getAll({ limit: 5, page: 1 }),
-        dashboardAPI.getLeadsTrend('180') // Last 6 months
+        dashboardAPI.getAssociatePerformance(),
+        dashboardAPI.getRecentActivities(),
+        siteVisitsAPI.getAll()
       ]);
-
-      if (statsData.success) {
+  
+      if (statsRes.success) {
+        const statsData = statsRes.data;
+  
         setStats([
-          { title: 'My Leads', value: statsData.data.totalLeads || '0', icon: Users, color: 'bg-gradient-to-r from-red-600 to-black', change: `+${Math.floor(Math.random() * 20)}%`, desc: 'Total leads generated' },
-          { title: 'Site Visits', value: statsData.data.totalSiteVisits || '0', icon: MapPin, color: 'bg-gradient-to-r from-red-600 to-black', change: `+${Math.floor(Math.random() * 15)}%`, desc: 'Visits completed' },
-          { title: 'Deals Closed', value: statsData.data.convertedLeads || '0', icon: CheckCircle, color: 'bg-gradient-to-r from-red-600 to-black', change: `+${Math.floor(Math.random() * 25)}%`, desc: 'Successful closures' },
-          { title: 'Commission', value: `₹${(statsData.data.totalCommission || 0).toLocaleString()}`, icon: DollarSign, color: 'bg-gradient-to-r from-red-600 to-black', change: `+${Math.floor(Math.random() * 30)}%`, desc: 'Total earnings' }
+          { 
+            title: 'My Leads', 
+            value: statsData.totalLeads?.toString() || '0', 
+            icon: Users, 
+            color: 'bg-gradient-to-r from-red-600 to-black', 
+            change: `${statsData.conversionRate || 0}%`, 
+            desc: 'Total leads assigned' 
+          },
+          { 
+            title: 'Total Commission', 
+            value: `₹${(statsData.totalCommission || 0).toLocaleString()}`, 
+            icon: TrendingUp, 
+            color: 'bg-gradient-to-r from-red-600 to-black', 
+            change: `+${statsData.totalWithdrawn ? ((statsData.totalWithdrawn / statsData.totalCommission) * 100).toFixed(0) : 0}%`, 
+            desc: 'Gross lifetime earnings' 
+          },
+          { 
+            title: 'Current Advance', 
+            value: `₹${(statsData.totalAdvance || 0).toLocaleString()}`, 
+            icon: DollarSign, 
+            color: 'bg-gradient-to-r from-red-600 to-black', 
+            change: `0%`, 
+            desc: 'Total advance taken' 
+          },
+          { 
+            title: 'Available Payout', 
+            value: `₹${(statsData.availableBalance || 0).toLocaleString()}`, 
+            icon: CheckCircle, 
+            color: 'bg-gradient-to-r from-red-600 to-black', 
+            change: `New`, 
+            desc: 'Ready for withdrawal' 
+          }
         ]);
       }
-
-      if (leadsData.success) {
-        setRecentLeads(leadsData.data.slice(0, 3));
+  
+      if (leadsRes.success) {
+        setRecentLeads(leadsRes.data || []);
       }
 
-      // Process performance chart data
-      if (leadsTrendData.success && leadsTrendData.data) {
-        const last6Months = Array.from({length: 6}, (_, i) => {
-          const date = new Date();
-          date.setMonth(date.getMonth() - (5 - i));
-          return date.toISOString().slice(0, 7); // YYYY-MM format
+      if (activityRes.success) {
+        setRecentActivities(activityRes.data || []);
+      }
+
+      if (siteVisitsRes.success) {
+        // Filter upcoming visits and format them
+        const visits = (siteVisitsRes.data || [])
+          .filter(v => v.status === 'Planned')
+          .sort((a, b) => new Date(a.date) - new Date(b.date))
+          .slice(0, 3)
+          .map(v => ({
+            id: v._id,
+            client: v.clientName,
+            project: v.project?.name || 'Project',
+            time: v.time,
+            date: new Date(v.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          }));
+        setUpcomingSiteVisits(visits);
+      }
+  
+      if (performanceRes.success && performanceRes.data) {
+        const { leadPerformance, commissionTrend, leadTrend, visitTrend } = performanceRes.data;
+        
+        // Process Lead Performance (Pie Chart)
+        const statusMap = {
+          'Pending': '#f59e0b',
+          'Show': '#3b82f6',
+          'Visit': '#8b5cf6',
+          'Deal Done': '#059669'
+        };
+        
+        const leadStatusData = leadPerformance.map(item => ({
+          name: item._id || 'Unknown',
+          y: item.count,
+          color: statusMap[item._id] || '#6b7280'
+        }));
+  
+        // Process Commission Trend
+        const commissionCategories = commissionTrend.map(item => {
+          const [year, month] = item._id.split('-');
+          return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'short' });
         });
-        
-        const categories = last6Months.map(month => {
-          const date = new Date(month + '-01');
-          return date.toLocaleDateString('en-US', { month: 'short' });
+        const commissionData = commissionTrend.map(item => item.commission);
+  
+        // Process Performance Trend (Area Chart)
+        const categories = leadTrend.map(item => {
+          const [year, month] = item._id.split('-');
+          return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'short' });
         });
-        
-        const dataMap = {};
-        leadsTrendData.data.forEach(item => {
-          const month = item._id.slice(0, 7);
-          dataMap[month] = item.count;
-        });
-        
-        const leads = last6Months.map(month => dataMap[month] || 0);
-        const visits = leads.map(count => Math.floor(count * 0.4)); // 40% visit rate
-        const deals = leads.map(count => Math.floor(count * 0.15)); // 15% conversion rate
-        
-        setChartData(prev => ({ 
-          ...prev, 
-          performance: { leads, visits, deals, categories },
+
+        // Align visitTrend with categories if possible, or just use leadTrend as primary
+        const performanceData = {
+          leads: leadTrend.map(item => item.leads),
+          deals: leadTrend.map(item => item.deals),
+          visits: leadTrend.map(lt => {
+            const vt = visitTrend.find(v => v._id === lt._id);
+            return vt ? vt.visits : 0;
+          }),
+          categories
+        };
+  
+        setChartData({
+          performance: performanceData.categories.length > 0 ? performanceData : { 
+            leads: [0,0,0,0,0,0], visits: [0,0,0,0,0,0], deals: [0,0,0,0,0,0], 
+            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'] 
+          },
           commission: { 
-            data: deals.map(deal => deal * 25), // ₹25k per deal
-            categories 
-          }
-        }));
-      }
-
-      // Set lead status distribution
-      const totalLeads = statsData.data?.totalLeads || 0;
-      if (totalLeads > 0) {
-        setChartData(prev => ({ 
-          ...prev, 
-          leadStatus: [
-            { name: 'Follow Up', y: Math.floor(totalLeads * 0.4), color: '#f59e0b' },
-            { name: 'Site Visit', y: Math.floor(totalLeads * 0.3), color: '#3b82f6' },
-            { name: 'Final Stage', y: Math.floor(totalLeads * 0.2), color: '#059669' },
-            { name: 'Closed', y: Math.floor(totalLeads * 0.1), color: '#dc2626' }
-          ]
-        }));
+            data: commissionData,
+            categories: commissionCategories
+          },
+          leadStatus: leadStatusData.length > 0 ? leadStatusData : [{ name: 'No Data', y: 1, color: '#e5e7eb' }]
+        });
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -119,11 +180,7 @@ const AssociateDashboard = () => {
     }
   };
 
-  const upcomingSiteVisits = [
-    { id: 1, client: 'Sarah Wilson', project: 'SP Heights', time: '10:00 AM', date: 'Today' },
-    { id: 2, client: 'David Brown', project: 'SP Gardens', time: '2:00 PM', date: 'Tomorrow' },
-    { id: 3, client: 'Lisa Davis', project: 'SP Plaza', time: '11:00 AM', date: 'Dec 28' }
-  ];
+  // Removed hardcoded upcomingSiteVisits
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -246,8 +303,8 @@ const AssociateDashboard = () => {
   const quickActions = [
     { title: 'Add Lead', desc: 'New lead entry', icon: Users, color: 'bg-blue-50 hover:bg-blue-100', iconColor: 'text-blue-600', path: '/associate/leads' },
     { title: 'Site Visit', desc: 'Schedule visit', icon: MapPin, color: 'bg-green-50 hover:bg-green-100', iconColor: 'text-green-600', path: '/associate/site-visits' },
-    { title: 'View Projects', desc: 'Browse projects', icon: Building, color: 'bg-purple-50 hover:bg-purple-100', iconColor: 'text-purple-600', path: '/associate/projects' },
-    { title: 'Commission', desc: 'Check earnings', icon: DollarSign, color: 'bg-orange-50 hover:bg-orange-100', iconColor: 'text-orange-600', path: '/associate/commission' }
+    { title: 'Commission', desc: 'Withdrawal', icon: TrendingUp, color: 'bg-purple-50 hover:bg-purple-100', iconColor: 'text-purple-600', path: '/associate/commissions' },
+    { title: 'My Expenses', desc: 'Check Payouts', icon: DollarSign, color: 'bg-orange-50 hover:bg-orange-100', iconColor: 'text-orange-600', path: '/associate/expenses' }
   ];
 
   return (
@@ -374,6 +431,37 @@ const AssociateDashboard = () => {
           >
             View All Visits →
           </button>
+        </div>
+
+        {/* Recent Activities */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Activities</h3>
+            <Clock className="w-5 h-5 text-purple-500" />
+          </div>
+          <div className="space-y-4">
+            {loading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+              </div>
+            ) : recentActivities.length > 0 ? (
+              recentActivities.map((activity, index) => (
+                <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="mt-1">
+                    <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{activity.description}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {new Date(activity.createdAt).toLocaleDateString()} • {new Date(activity.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-4">No recent activities</p>
+            )}
+          </div>
         </div>
       </div>
 

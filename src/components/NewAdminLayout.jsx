@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
   Users, 
@@ -14,12 +15,16 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
-  FileText
+  FileText,
+  TrendingUp,
+  CreditCard,
+  Trophy
 } from 'lucide-react';
 
 const NewAdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
@@ -65,12 +70,16 @@ const NewAdminLayout = () => {
       ]
     },
     { icon: DollarSign, label: 'Manage Payments', path: '/admin/payments' },
+    { icon: TrendingUp, label: 'Manage Commissions', path: '/admin/commissions' },
+    { icon: CreditCard, label: 'Manage Expense', path: '/admin/expenses' },
+    { icon: Trophy, label: 'Monthly Rewards', path: '/admin/rewards' },
     { icon: FileText, label: 'Manage Invoices', path: '/admin/invoices' },
     { icon: User, label: 'Profile', path: '/admin/profile' },
     { icon: Lock, label: 'Change Password', path: '/admin/change-password' }
   ];
 
   const handleLogout = () => {
+    logout();
     navigate('/');
   };
 
@@ -234,11 +243,13 @@ const NewAdminLayout = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-red-600 to-black rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">A</span>
+                  <span className="text-white text-sm font-medium">
+                    {user?.name?.charAt(0).toUpperCase() || 'A'}
+                  </span>
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900">Admin User</p>
-                  <p className="text-xs text-gray-600">Super Admin</p>
+                  <p className="text-sm font-medium text-gray-900">{user?.name || 'Admin User'}</p>
+                  <p className="text-xs text-gray-600">{user?.role === 'admin' ? 'Super Admin' : 'Admin'}</p>
                 </div>
               </div>
             </div>

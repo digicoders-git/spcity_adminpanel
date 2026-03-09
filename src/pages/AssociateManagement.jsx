@@ -1,14 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import {
   Users, Plus, Edit, Trash2, Eye, Phone, Mail,
-  Calendar, Search, Key, Shield, UserCheck, EyeOff
+  Calendar, Search, Key, Shield, UserCheck, EyeOff, CreditCard, DollarSign
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { Pagination, ExportButton, usePagination } from '../utils/tableUtils.jsx';
-import { associatesAPI } from '../utils/api'; 
+import { associatesAPI } from '../utils/api';
+
+const COMMISSION_RANKS = [
+  { name: 'STAR', rate: 5 },
+  { name: 'GOLD', rate: 6 },
+  { name: 'PLATINUM', rate: 7 },
+  { name: 'RUBY', rate: 8 },
+  { name: 'EMERALD', rate: 9 },
+  { name: 'DIAMOND', rate: 10 },
+  { name: 'DOUBLE DIAMOND', rate: 11 },
+  { name: 'CROWN', rate: 12 },
+  { name: 'EX CROWN', rate: 13 },
+  { name: 'SUPER CROWN', rate: 14 },
+  { name: 'ROYAL CROWN', rate: 15 }
+];
 
 const AssociateManagement = () => {
+  const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [associates, setAssociates] = useState([]);
@@ -37,6 +53,7 @@ const AssociateManagement = () => {
     confirmPassword: '',
     role: '',
     department: '',
+    commissionRate: 0,
     permissions: []
   });
 
@@ -114,6 +131,7 @@ const AssociateManagement = () => {
       confirmPassword: '',
       role: '',
       department: '',
+      commissionRate: 0,
       permissions: []
     });
     setShowModal(true);
@@ -131,6 +149,7 @@ const AssociateManagement = () => {
       confirmPassword: '',
       role: associate.role,
       department: associate.department,
+      commissionRate: associate.commissionRate || 0,
       permissions: associate.permissions || []
     });
     setShowModal(true);
@@ -168,6 +187,7 @@ const AssociateManagement = () => {
           email: formData.email,
           role: formData.role,
           department: formData.department,
+          commissionRate: formData.commissionRate,
           permissions: formData.permissions
         };
 
@@ -185,10 +205,21 @@ const AssociateManagement = () => {
       setShowModal(false);
       fetchAssociates();
 
+      setShowModal(false);
+      fetchAssociates();
+
     } catch (err) {
       console.error('Associate operation error:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Operation failed';
-      toast.error(errorMessage);
+      
+      // Handle detailed validation errors from express-validator
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        err.response.data.errors.forEach(error => {
+          toast.error(`${error.msg} (${error.path || error.param})`);
+        });
+      } else {
+        const errorMessage = err.response?.data?.message || err.message || 'Operation failed';
+        toast.error(errorMessage);
+      }
     }
   };
 
@@ -377,6 +408,13 @@ const AssociateManagement = () => {
                         >
                           <Key className="w-4 h-4" />
                         </button>
+                        <button 
+                          onClick={() => navigate('/admin/expenses?associate=' + associate._id)}
+                          className="btn-primary p-2 rounded-lg bg-orange-600 hover:bg-orange-700"
+                          title="View Expenses/Advances"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -506,7 +544,7 @@ const AssociateManagement = () => {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
                     <select
@@ -532,6 +570,23 @@ const AssociateManagement = () => {
                       placeholder="e.g., Sales"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Comm. Rate / Rank *</label>
+                    <select
+                      name="commissionRate"
+                      value={formData.commissionRate}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                      required
+                    >
+                      <option value="0">Default (Level Based)</option>
+                      {COMMISSION_RANKS.map(rank => (
+                        <option key={rank.name} value={rank.rate}>
+                          {rank.name} ({rank.rate}%)
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -642,6 +697,13 @@ const AssociateManagement = () => {
                         <div>
                           <p className="text-sm text-gray-600">Department</p>
                           <p className="font-medium">{viewAssociate.department || 'Sales'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <DollarSign className="w-5 h-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-600">Commission Rate</p>
+                          <p className="font-medium">{viewAssociate.commissionRate || 0}%</p>
                         </div>
                       </div>
                     </div>

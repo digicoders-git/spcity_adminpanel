@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Camera, Edit, Save, X, Lock, TrendingUp, Award, Building, Users } from 'lucide-react';
 import { authAPI, dashboardAPI, commissionsAPI } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 
 const Profile = () => {
+  const { updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [originalData, setOriginalData] = useState(null);
@@ -23,7 +25,9 @@ const Profile = () => {
     bio: '',
     username: '',
     status: '',
-    createdAt: ''
+    createdAt: '',
+    emailNotifications: true,
+    smsNotifications: false
   });
 
   const [stats, setStats] = useState({
@@ -35,12 +39,7 @@ const Profile = () => {
     pendingWithdrawals: 0
   });
 
-  useEffect(() => {
-    fetchProfile();
-    fetchStats();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       const response = await authAPI.getProfile();
@@ -55,10 +54,14 @@ const Profile = () => {
           bio: response.data.bio || '',
           username: response.data.username || '',
           status: response.data.status || '',
-          createdAt: response.data.createdAt || ''
+          createdAt: response.data.createdAt || '',
+          emailNotifications: response.data.emailNotifications !== undefined ? response.data.emailNotifications : true,
+          smsNotifications: response.data.smsNotifications !== undefined ? response.data.smsNotifications : false,
+          profileImage: response.data.profileImage || ''
         };
         setProfileData(userData);
         setOriginalData(userData);
+        updateUser(userData);
       }
     } catch (error) {
       toast.error('Failed to fetch profile');
@@ -66,9 +69,9 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [updateUser]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const [dashboardRes, commissionRes] = await Promise.all([
         dashboardAPI.getStats(),
@@ -95,7 +98,12 @@ const Profile = () => {
     } catch (error) {
       console.error('Failed to fetch stats:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+    fetchStats();
+  }, [fetchProfile, fetchStats]);
 
   const handleInputChange = (e) => {
     setProfileData({
@@ -122,7 +130,9 @@ const Profile = () => {
         name: profileData.name,
         phone: profileData.phone,
         address: profileData.address,
-        bio: profileData.bio
+        bio: profileData.bio,
+        emailNotifications: profileData.emailNotifications,
+        smsNotifications: profileData.smsNotifications
       };
       
       const response = await authAPI.updateProfile(updateData);
@@ -130,6 +140,7 @@ const Profile = () => {
       if (response.success) {
         toast.success('Profile updated successfully!');
         setOriginalData(profileData);
+        updateUser({ name: profileData.name });
         setIsEditing(false);
       }
     } catch (error) {
@@ -324,23 +335,23 @@ const Profile = () => {
 
           {/* Quick Stats */}
           <div className="card mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Summary</h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Total Leads</span>
-                <span className="font-bold text-blue-600">1,234</span>
+                <span className="font-bold text-blue-600">{stats.totalLeads.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Projects Managed</span>
-                <span className="font-bold text-green-600">23</span>
+                <span className="text-gray-600">Active Projects</span>
+                <span className="font-bold text-green-600">{stats.totalProjects.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Team Members</span>
-                <span className="font-bold text-purple-600">56</span>
+                <span className="text-gray-600">Team Size</span>
+                <span className="font-bold text-purple-600">{stats.totalAssociates.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Revenue Generated</span>
-                <span className="font-bold text-orange-600">₹45.2L</span>
+                <span className="text-gray-600">Revenue</span>
+                <span className="font-bold text-orange-600">{formatCurrency(stats.totalRevenue)}</span>
               </div>
             </div>
           </div>
@@ -468,10 +479,28 @@ const Profile = () => {
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
                   <h4 className="font-medium text-gray-900">Email Notifications</h4>
-                  <p className="text-sm text-gray-600">Receive email updates about leads and payments</p>
+                  <p className="text-gray-600 text-sm">Receive email updates about leads and payments</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" defaultChecked />
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={profileData.emailNotifications}
+                    onChange={(e) => {
+                      const newValue = e.target.checked;
+                      setProfileData(prev => ({ ...prev, emailNotifications: newValue }));
+                      // Auto-save if not in editing mode, or just wait for Save button?
+                      // Usually best to wait for Save button or auto-save. Let's do a prompt or manual save.
+                      if (!isEditing) {
+                        authAPI.updateProfile({ emailNotifications: newValue })
+                          .then(() => {
+                            toast.success('Email preference updated');
+                            updateUser({ emailNotifications: newValue });
+                          })
+                          .catch(() => toast.error('Failed to update preference'));
+                      }
+                    }}
+                  />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
@@ -479,10 +508,26 @@ const Profile = () => {
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
                   <h4 className="font-medium text-gray-900">SMS Notifications</h4>
-                  <p className="text-sm text-gray-600">Get SMS alerts for urgent matters</p>
+                  <p className="text-gray-600 text-sm">Get SMS alerts for urgent matters</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={profileData.smsNotifications}
+                    onChange={(e) => {
+                      const newValue = e.target.checked;
+                      setProfileData(prev => ({ ...prev, smsNotifications: newValue }));
+                      if (!isEditing) {
+                        authAPI.updateProfile({ smsNotifications: newValue })
+                          .then(() => {
+                            toast.success('SMS preference updated');
+                            updateUser({ smsNotifications: newValue });
+                          })
+                          .catch(() => toast.error('Failed to update preference'));
+                      }
+                    }}
+                  />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   FileText, Plus, Search, Eye,
   Trash2, Edit, Printer,
-  CheckCircle, Clock, AlertCircle, X
+  CheckCircle, Clock, AlertCircle, X,
+  Trash, Save, Receipt, Building, Download
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useReactToPrint } from 'react-to-print';
@@ -37,11 +38,17 @@ const InvoiceManagement = () => {
 
   const printRef = useRef();
 
-  /* ================= PRINT ================= */
+  /* ================= PRINT & DOWNLOAD ================= */
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
+    contentRef: printRef,
     documentTitle: viewInvoice ? `Invoice-${viewInvoice.invoiceNumber}` : 'Invoice',
   });
+
+  const handleDownloadPDF = () => {
+    // Calling handlePrint triggers the browser print dialog, 
+    // which is the most reliable way to Save as PDF without heavy libraries.
+    handlePrint();
+  };
 
   /* ================= FETCH ================= */
   const fetchInvoices = useCallback(async (page = 1) => {
@@ -68,8 +75,12 @@ const InvoiceManagement = () => {
   }, [activeTab, searchTerm]);
 
   const fetchProjects = useCallback(async () => {
-    const res = await projectsAPI.getAll();
-    setProjects(res.data || []);
+    try {
+      const res = await projectsAPI.getAll();
+      setProjects(res.data || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
   }, []);
 
   useEffect(() => {
@@ -77,7 +88,26 @@ const InvoiceManagement = () => {
     fetchProjects();
   }, [fetchInvoices, fetchProjects]);
 
-  /* ================= HELPERS ================= */
+  /* ================= FORM HELPERS ================= */
+  const handleItemChange = (index, field, value) => {
+    const newItems = [...formData.items];
+    newItems[index][field] = field === 'description' ? value : Number(value);
+    setFormData({ ...formData, items: newItems });
+  };
+
+  const addItem = () => {
+    setFormData({
+      ...formData,
+      items: [...formData.items, { description: '', quantity: 1, unitPrice: 0 }]
+    });
+  };
+
+  const removeItem = (index) => {
+    if (formData.items.length === 1) return;
+    const newItems = formData.items.filter((_, i) => i !== index);
+    setFormData({ ...formData, items: newItems });
+  };
+
   const calculateTotal = () => {
     const subtotal = formData.items.reduce(
       (s, i) => s + Number(i.quantity) * Number(i.unitPrice),
@@ -87,10 +117,10 @@ const InvoiceManagement = () => {
     return { subtotal, tax, total: subtotal + tax };
   };
 
-  /* ================= MODAL ================= */
+  /* ================= MODAL ACTIONS ================= */
   const openCreate = () => {
     setModalType('create');
-    setFormData(EMPTY_FORM);
+    setFormData({ ...EMPTY_FORM, dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] });
     setViewInvoice(null);
     setShowModal(true);
   };
@@ -109,9 +139,7 @@ const InvoiceManagement = () => {
         quantity: i.quantity,
         unitPrice: i.unitPrice,
       })) || [{ description: '', quantity: 1, unitPrice: 0 }],
-      dueDate: invoice.dueDate
-        ? invoice.dueDate.split('T')[0]
-        : '',
+      dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : '',
       notes: invoice.notes || '',
       status: invoice.status || 'Draft',
       taxRate: invoice.taxRate || 0,
@@ -141,17 +169,16 @@ const InvoiceManagement = () => {
     try {
       if (modalType === 'create') {
         await invoicesAPI.create(payload);
-        toast.success('Invoice created');
+        toast.success('Invoice generated successfully! ✨');
       } else {
         await invoicesAPI.update(viewInvoice._id, payload);
-        toast.success('Invoice updated');
+        toast.success('Invoice updated successfully! ✨');
       }
 
       setShowModal(false);
-      setFormData(EMPTY_FORM);
       fetchInvoices();
     } catch (err) {
-      toast.error(err.message || 'Invoice failed');
+      toast.error(err.message || 'Action failed');
     }
   };
 
@@ -159,161 +186,423 @@ const InvoiceManagement = () => {
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
       title: 'Delete Invoice?',
+      text: 'This action cannot be undone.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it!'
     });
 
     if (confirm.isConfirmed) {
-      await invoicesAPI.delete(id);
-      toast.success('Invoice deleted');
-      fetchInvoices();
+      try {
+        await invoicesAPI.delete(id);
+        toast.success('Invoice deleted');
+        fetchInvoices();
+      } catch (error) {
+        toast.error('Failed to delete invoice');
+      }
     }
   };
 
-  /* ================= UI ================= */
-  const tabs = [
-    { key: 'all', label: 'All Invoices' },
-    { key: 'Paid', label: 'Paid' },
-    { key: 'Sent', label: 'Sent' },
-    { key: 'Draft', label: 'Draft' },
-    { key: 'Overdue', label: 'Overdue' },
-  ];
+  /* ================= UI RENDERERS ================= */
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'Paid': return 'bg-green-100 text-green-700 border-green-200';
+      case 'Sent': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'Overdue': return 'bg-red-100 text-red-700 border-red-200';
+      case 'Draft': return 'bg-gray-100 text-gray-700 border-gray-200';
+      default: return 'bg-gray-50 text-gray-600 border-gray-100';
+    }
+  };
+
+  const totals = calculateTotal();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="p-6 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div>
-          <h1 className="text-3xl font-bold">Invoice Management</h1>
-          <p className="text-gray-600">Create and manage invoices</p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+            <Receipt className="text-red-600" size={32} />
+            Invoice Management
+          </h1>
+          <p className="text-gray-500 mt-1 font-medium">Create, manage and track professional invoices</p>
         </div>
-        <button onClick={openCreate} className="btn-primary flex gap-2">
-          <Plus size={18} /> Create Invoice
+        <button 
+          onClick={openCreate}
+          className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-red-200"
+        >
+          <Plus size={20} />
+          Generate New Invoice
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid md:grid-cols-4 gap-6">
-        <Stat title="Total" value={pagination.total} icon={FileText} />
-        <Stat title="Paid" value={invoices.filter(i => i.status === 'Paid').length} icon={CheckCircle} />
-        <Stat title="Pending" value={invoices.filter(i => ['Sent', 'Draft'].includes(i.status)).length} icon={Clock} />
-        <Stat title="Overdue" value={invoices.filter(i => i.status === 'Overdue').length} icon={AlertCircle} />
+      {/* Stats Quick Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard title="Total Invoices" value={pagination.total} icon={FileText} color="blue" />
+        <StatCard title="Paid Amount" value={`₹${invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + i.total, 0).toLocaleString()}`} icon={CheckCircle} color="green" />
+        <StatCard title="Pending" value={invoices.filter(i => ['Sent', 'Draft'].includes(i.status)).length} icon={Clock} color="orange" />
+        <StatCard title="Overdue" value={invoices.filter(i => i.status === 'Overdue').length} icon={AlertCircle} color="red" />
       </div>
 
-      {/* Table */}
-      <div className="card">
-        <div className="flex justify-between mb-4">
-          <div className="flex gap-2">
-            {tabs.map(t => (
+      {/* Main Content Area */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Filters & Search */}
+        <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col lg:flex-row justify-between items-center gap-4">
+          <div className="flex p-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto w-full lg:w-auto">
+            {['all', 'Paid', 'Sent', 'Draft', 'Overdue'].map(tab => (
               <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`px-4 py-2 rounded-lg ${
-                  activeTab === t.key
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-100'
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2 rounded-lg font-bold text-sm transition-all whitespace-nowrap ${
+                  activeTab === tab 
+                    ? 'bg-red-600 text-white shadow-md' 
+                    : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
-                {t.label}
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
 
-          <div className="flex gap-3">
-            <input
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search"
-              className="border rounded px-3 py-2"
-            />
-            <ExportButton data={invoices} filename="invoices" />
+          <div className="flex items-center gap-3 w-full lg:w-96">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search by client or invoice #"
+                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all outline-none"
+              />
+            </div>
+            <ExportButton data={invoices} filename={`invoices-${new Date().toLocaleDateString()}`} />
           </div>
         </div>
 
-        {loading ? (
-          <p className="text-center py-10">Loading...</p>
-        ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th>#</th><th>Client</th><th>Project</th>
-                <th>Amount</th><th>Date</th><th>Status</th><th />
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map(inv => (
-                <tr key={inv._id} className="border-b">
-                  <td>#{inv.invoiceNumber || '-'}</td>
-                  <td>{inv.customerName}</td>
-                  <td>{inv.project?.name || 'N/A'}</td>
-                  <td>₹{Number(inv.total || 0).toLocaleString()}</td>
-                  <td>{inv.issueDate ? new Date(inv.issueDate).toLocaleDateString() : '-'}</td>
-                  <td>{inv.status}</td>
-                  <td className="flex gap-2">
-                    <Eye onClick={() => setViewInvoice(inv)} />
-                    <Edit onClick={() => openEdit(inv)} />
-                    <Trash2 onClick={() => handleDelete(inv._id)} />
-                  </td>
+        {/* Table Content */}
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-500 font-medium">Fetching invoices...</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50/50 text-gray-500 text-xs uppercase tracking-wider text-left border-b border-gray-100">
+                  <th className="px-6 py-4 font-black">Invoice #</th>
+                  <th className="px-6 py-4 font-black">Client Details</th>
+                  <th className="px-6 py-4 font-black">Project</th>
+                  <th className="px-6 py-4 font-black">Total Amount</th>
+                  <th className="px-6 py-4 font-black">Due Date</th>
+                  <th className="px-6 py-4 font-black">Status</th>
+                  <th className="px-6 py-4 font-black text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {invoices.length > 0 ? invoices.map(inv => (
+                  <tr key={inv._id} className="hover:bg-gray-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <span className="font-bold text-gray-900">#{inv.invoiceNumber}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-bold text-gray-900">{inv.customerName}</p>
+                        <p className="text-xs text-gray-500">{inv.customerPhone}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 italic text-sm text-gray-600">
+                      {inv.project?.name || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="font-black text-gray-900">₹{Number(inv.total || 0).toLocaleString()}</span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusBadge(inv.status)}`}>
+                        {inv.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end gap-2">
+                        <ActionButton icon={Eye} color="blue" onClick={() => setViewInvoice(inv)} tooltip="View Invoice" />
+                        <ActionButton icon={Edit} color="gray" onClick={() => openEdit(inv)} tooltip="Edit" />
+                        <ActionButton icon={Trash2} color="red" onClick={() => handleDelete(inv._id)} tooltip="Delete" />
+                      </div>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="7" className="text-center py-20">
+                      <div className="flex flex-col items-center gap-2">
+                        <FileText size={48} className="text-gray-200" />
+                        <p className="text-gray-400 font-medium">No invoices found matching your criteria</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
 
-        <Pagination
-          currentPage={pagination.current}
-          totalPages={pagination.pages}
-          onPageChange={fetchInvoices}
-        />
+        {/* Pagination */}
+        <div className="p-6 border-t border-gray-100">
+          <Pagination
+            currentPage={pagination.current}
+            totalPages={pagination.pages}
+            onPageChange={fetchInvoices}
+          />
+        </div>
       </div>
 
       {/* CREATE / EDIT MODAL */}
       {showModal && (
-        <Modal onClose={() => setShowModal(false)}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} placeholder="Customer Name" required />
-            <select value={formData.project} onChange={e => setFormData({ ...formData, project: e.target.value })} required>
-              <option value="">Select Project</option>
-              {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-            </select>
-            <button className="btn-primary">
-              {modalType === 'create' ? 'Create' : 'Update'}
-            </button>
+        <Modal title={`${modalType === 'create' ? 'Generate New' : 'Edit'} Invoice`} onClose={() => setShowModal(false)}>
+          <form onSubmit={handleSubmit} className="space-y-8 p-1">
+            {/* Client & Project Info */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Client Details</h3>
+                <InputField label="Customer Name" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} required />
+                <div className="grid grid-cols-2 gap-4">
+                  <InputField label="Phone" value={formData.customerPhone} onChange={e => setFormData({ ...formData, customerPhone: e.target.value })} required />
+                  <InputField label="Email (Optional)" value={formData.customerEmail} onChange={e => setFormData({ ...formData, customerEmail: e.target.value })} type="email" />
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Invoice Details</h3>
+                <div className="space-y-1">
+                  <label className="text-xs font-black text-gray-500 uppercase">Select Project</label>
+                  <select 
+                    value={formData.project} 
+                    onChange={e => setFormData({ ...formData, project: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none font-medium" 
+                    required
+                  >
+                    <option value="">-- Choose Project --</option>
+                    {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <InputField label="Due Date" type="date" value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} required />
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-gray-500 uppercase">Status</label>
+                    <select 
+                      value={formData.status} 
+                      onChange={e => setFormData({ ...formData, status: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none font-medium"
+                    >
+                      {['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center border-b pb-2">
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">Description & Pricing</h3>
+                <button 
+                  type="button" 
+                  onClick={addItem}
+                  className="text-xs font-bold text-red-600 flex items-center gap-1 hover:text-red-700 transition-colors"
+                >
+                  <Plus size={14} /> Add Another Item
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                {formData.items.map((item, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-3 items-end animate-in slide-in-from-left duration-300">
+                    <div className="col-span-6 lg:col-span-7">
+                      <InputField 
+                        label={index === 0 ? "Description" : ""} 
+                        value={item.description} 
+                        onChange={e => handleItemChange(index, 'description', e.target.value)} 
+                        placeholder="Service or Product name"
+                        required 
+                      />
+                    </div>
+                    <div className="col-span-2 lg:col-span-1">
+                      <InputField 
+                        label={index === 0 ? "Qty" : ""} 
+                        type="number"
+                        min="1"
+                        value={item.quantity} 
+                        onChange={e => handleItemChange(index, 'quantity', e.target.value)} 
+                        required 
+                      />
+                    </div>
+                    <div className="col-span-3 lg:col-span-3">
+                      <InputField 
+                        label={index === 0 ? "Unit Price" : ""} 
+                        type="number"
+                        value={item.unitPrice} 
+                        onChange={e => handleItemChange(index, 'unitPrice', e.target.value)} 
+                        required 
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-center pb-2">
+                      <button 
+                        type="button" 
+                        onClick={() => removeItem(index)}
+                        className={`text-gray-300 hover:text-red-600 transition-colors ${formData.items.length === 1 ? 'invisible' : ''}`}
+                      >
+                        <Trash size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer Calculation */}
+            <div className="flex flex-col md:flex-row justify-between items-start gap-8 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+              <div className="flex-1 w-full lg:max-w-md">
+                <label className="text-xs font-black text-gray-500 uppercase tracking-wider mb-2 block">Additional Notes</label>
+                <textarea 
+                  value={formData.notes} 
+                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Payment terms, bank details, or generic notes..."
+                  className="w-full h-24 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none font-medium text-sm transition-all"
+                />
+              </div>
+
+              <div className="w-full lg:w-72 space-y-3">
+                <div className="flex justify-between text-sm text-gray-500 font-bold">
+                  <span>Subtotal:</span>
+                  <span>₹{totals.subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-xs font-black text-gray-500 uppercase">Tax (%)</span>
+                  <input 
+                    type="number" 
+                    value={formData.taxRate} 
+                    onChange={e => setFormData({ ...formData, taxRate: e.target.value })}
+                    className="w-20 px-3 py-1 bg-white border border-gray-200 rounded-lg text-right font-bold focus:ring-2 focus:ring-red-500 transition-all outline-none" 
+                  />
+                </div>
+                <div className="flex justify-between items-center border-t border-gray-200 pt-3">
+                  <span className="font-black text-gray-900">GRAND TOTAL:</span>
+                  <span className="text-2xl font-black text-red-600">₹{totals.total.toLocaleString()}</span>
+                </div>
+                <button 
+                  type="submit" 
+                  className="w-full bg-red-600 hover:bg-black text-white py-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all transform active:scale-95 shadow-xl shadow-red-100 mt-4"
+                >
+                  <Save size={20} />
+                  {modalType === 'create' ? 'Generate Official Invoice' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
           </form>
         </Modal>
       )}
 
-      {/* VIEW / PRINT */}
+      {/* VIEW / PRINT MODAL */}
       {viewInvoice && !showModal && (
-        <Modal onClose={() => setViewInvoice(null)}>
-          <button onClick={handlePrint} className="btn-primary mb-3">
-            <Printer size={16} /> Print
-          </button>
-          <InvoiceView ref={printRef} invoice={viewInvoice} />
+        <Modal title={`Invoice Viewer - #${viewInvoice.invoiceNumber}`} onClose={() => setViewInvoice(null)} maxWidth="max-w-4xl">
+          <div className="flex justify-between items-center mb-6 bg-red-50 p-4 rounded-xl border border-red-100 no-print">
+            <div className="flex gap-2">
+              <button 
+                onClick={() => handlePrint()} 
+                className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all shadow-md"
+              >
+                <Printer size={18} /> Print Invoice
+              </button>
+              <button 
+                onClick={handleDownloadPDF}
+                className="bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all shadow-sm"
+              >
+                <Download size={18} /> Save as PDF
+              </button>
+            </div>
+            <p className="text-sm font-medium text-red-600 italic">Pre-formatted for A4 paper size</p>
+          </div>
+          
+          <div className="overflow-y-auto max-h-[70vh] rounded-xl border border-gray-100 shadow-inner p-2 bg-gray-50/30">
+            <InvoiceView ref={printRef} invoice={viewInvoice} />
+          </div>
         </Modal>
       )}
     </div>
   );
 };
 
-/* ================= SMALL COMPONENTS ================= */
+/* ================= COMPONENT HELPER COMPONENTS ================= */
 
-const Stat = ({ title, value, icon: Icon }) => (
-  <div className="card flex justify-between">
-    <div>
-      <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-2xl font-bold">{value}</p>
+const StatCard = ({ title, value, icon: Icon, color }) => {
+  const colors = {
+    red: 'from-red-600 to-red-800 text-red-600',
+    blue: 'from-blue-600 to-blue-800 text-blue-600',
+    green: 'from-green-600 to-green-800 text-green-600',
+    orange: 'from-orange-600 to-orange-800 text-orange-600'
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 group hover:shadow-md transition-all">
+      <div className={`p-4 rounded-xl bg-gray-50 group-hover:bg-red-50 transition-colors`}>
+        <Icon className={`w-8 h-8 ${colors[color].split(' ')[2]}`} strokeWidth={2.5} />
+      </div>
+      <div>
+        <p className="text-gray-400 font-bold text-xs uppercase tracking-wider">{title}</p>
+        <p className="text-2xl font-black text-gray-900">{value}</p>
+      </div>
     </div>
-    <Icon className="text-gray-400" />
+  );
+};
+
+const InputField = ({ label, ...props }) => (
+  <div className="space-y-1">
+    {label && <label className="text-xs font-black text-gray-500 uppercase tracking-wider">{label}</label>}
+    <input 
+      {...props}
+      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all outline-none font-medium h-11 placeholder:text-gray-300"
+    />
   </div>
 );
 
-const Modal = ({ children, onClose }) => (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-xl w-full max-w-4xl relative">
-      <X onClick={onClose} className="absolute top-4 right-4 cursor-pointer" />
-      {children}
+const ActionButton = ({ icon: Icon, color, onClick, tooltip }) => {
+  const colors = {
+    red: 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border-red-100',
+    blue: 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border-blue-100',
+    gray: 'bg-gray-50 text-gray-600 hover:bg-gray-800 hover:text-white border-gray-200'
+  };
+
+  return (
+    <button 
+      onClick={onClick}
+      title={tooltip}
+      className={`p-2 rounded-lg border transition-all transform active:scale-95 ${colors[color]}`}
+    >
+      <Icon size={18} />
+    </button>
+  );
+};
+
+const Modal = ({ children, title, onClose, maxWidth = "max-w-6xl" }) => (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] px-4 animate-in fade-in duration-300">
+    <div className={`bg-white rounded-3xl w-full ${maxWidth} max-h-[92vh] flex flex-col shadow-2xl relative animate-in zoom-in-95 duration-300`}>
+      <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+        <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+          {title}
+        </h2>
+        <button 
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-900"
+        >
+          <X size={24} />
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        {children}
+      </div>
     </div>
   </div>
 );

@@ -53,6 +53,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
   };
 
+  const updateUser = (userData) => {
+    setUser(prevUser => {
+      const updatedUser = { ...prevUser, ...userData };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  };
+
   const isAdmin = () => {
     return user && user.role === 'admin';
   };
@@ -65,6 +73,7 @@ export const AuthProvider = ({ children }) => {
     user,
     login,
     logout,
+    updateUser,
     loading,
     isAdmin,
     isAssociate

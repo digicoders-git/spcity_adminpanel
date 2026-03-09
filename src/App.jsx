@@ -14,6 +14,9 @@ import ProjectManagement from './pages/ProjectManagement';
 import SiteManagement from './pages/SiteManagement';
 import PaymentManagement from './pages/PaymentManagement';
 import InvoiceManagement from './pages/InvoiceManagement';
+import CommissionManagement from './pages/CommissionManagement';
+import ExpenseManagement from './pages/ExpenseManagement';
+import RewardManagement from './pages/RewardManagement';
 import Profile from './pages/Profile';
 import ChangePassword from './pages/ChangePassword';
 
@@ -25,6 +28,8 @@ import AssociateAmount from './pages/associate/AssociateAmount';
 import AssociateCommission from './pages/associate/AssociateCommission';
 import AssociateProfile from './pages/associate/AssociateProfile';
 import AssociateProjects from './pages/associate/AssociateProjects';
+import AssociateExpense from './pages/associate/AssociateExpense';
+import AssociateReward from './pages/associate/AssociateReward';
 
 import './App.css';
 
@@ -64,6 +69,9 @@ function AppRoutes() {
         <Route path="projects" element={<ProjectManagement />} />
         <Route path="sites" element={<SiteManagement />} />
         <Route path="payments" element={<PaymentManagement />} />
+        <Route path="commissions" element={<CommissionManagement />} />
+        <Route path="expenses" element={<ExpenseManagement />} />
+        <Route path="rewards" element={<RewardManagement />} />
         <Route path="invoices" element={<InvoiceManagement />} />
         <Route path="profile" element={<Profile />} />
         <Route path="change-password" element={<ChangePassword />} />
@@ -92,7 +100,9 @@ function AppRoutes() {
         <Route path="amount/emi" element={<AssociateAmount />} />
         <Route path="commission/total" element={<AssociateCommission />} />
         <Route path="commission/withdrawal" element={<AssociateCommission />} />
-        <Route path="commission/history" element={<AssociateCommission />} />
+        <Route path="commissions" element={<AssociateCommission />} />
+        <Route path="expenses" element={<AssociateExpense />} />
+        <Route path="rewards" element={<AssociateReward />} />
         <Route path="profile" element={<AssociateProfile />} />
       </Route>
       

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { DollarSign, Plus, Eye, Calendar, User, Building, Search, CheckCircle, Clock, MoreVertical, Filter, Edit, Trash2, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { DollarSign, Plus, Eye, Calendar, Building, Search, CheckCircle, Clock, MoreVertical, Filter, Edit, Trash2, Check } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { Pagination, ExportButton, usePagination } from '../utils/tableUtils.jsx';
-import { paymentsAPI, projectsAPI } from '../utils/api';
+import { Pagination, ExportButton } from '../utils/tableUtils.jsx';
+import { paymentsAPI, projectsAPI, associatesAPI, commissionsAPI } from '../utils/api';
 import Swal from 'sweetalert2';
 
 const PaymentManagement = () => {
@@ -17,12 +17,14 @@ const PaymentManagement = () => {
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [associates, setAssociates] = useState([]);
   const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0 });
 
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
     project: '',
+    associate: '',
     amount: '',
     paymentType: '',
     paymentMethod: '',
@@ -33,6 +35,7 @@ const PaymentManagement = () => {
   useEffect(() => {
     fetchPayments();
     fetchProjects();
+    fetchAssociates();
   }, [activeTab, searchTerm]);
 
   const fetchPayments = async (page = 1) => {
@@ -69,6 +72,15 @@ const PaymentManagement = () => {
     }
   };
 
+  const fetchAssociates = async () => {
+    try {
+      const response = await associatesAPI.getAll();
+      setAssociates(response.data || response);
+    } catch (error) {
+      console.error('Error fetching associates:', error);
+    }
+  };
+
   const tabs = [
     { key: 'all', label: 'All Payments', count: pagination.total },
     { key: 'Received', label: 'Received', count: payments.filter(p => p.status === 'Received').length },
@@ -102,15 +114,15 @@ const PaymentManagement = () => {
     setModalType('edit');
     setSelectedPayment(payment);
     setFormData({
-      clientName: payment.clientName,
-      project: payment.project,
+      customerName: payment.customerName,
+      customerPhone: payment.customerPhone || '',
+      project: payment.project?._id || payment.project,
+      associate: payment.associate?._id || payment.associate || '',
       amount: payment.amount.toString(),
-      type: payment.type,
-      paymentDate: payment.date,
-      dueDate: payment.dueDate,
+      paymentType: payment.paymentType,
+      dueDate: payment.dueDate ? new Date(payment.dueDate).toISOString().split('T')[0] : '',
       paymentMethod: payment.paymentMethod,
-      status: payment.status,
-      transactionId: payment.transactionId || ''
+      notes: payment.notes || ''
     });
     setShowModal(true);
   };
@@ -118,15 +130,15 @@ const PaymentManagement = () => {
   const handleAddPayment = () => {
     setModalType('add');
     setFormData({
-      clientName: '',
+      customerName: '',
+      customerPhone: '',
       project: '',
+      associate: '',
       amount: '',
-      type: '',
-      paymentDate: '',
-      dueDate: '',
+      paymentType: '',
       paymentMethod: '',
-      status: 'Pending',
-      transactionId: ''
+      dueDate: '',
+      notes: ''
     });
     setShowModal(true);
   };
@@ -180,6 +192,20 @@ const PaymentManagement = () => {
     }
     setDropdownOpen(null);
   };
+  const handleGenerateCommission = async (payment) => {
+    try {
+      setDropdownOpen(null);
+      const res = await commissionsAPI.generateCommission(payment._id);
+      if (res.success) {
+        toast.success('Commission generated successfully!');
+        fetchPayments(); // 🔄 Instant Refresh
+      } else {
+        toast.info(res.message || 'Already generated');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to generate commission');
+    }
+  };
 
   const toggleDropdown = (paymentId) => {
     setDropdownOpen(dropdownOpen === paymentId ? null : paymentId);
@@ -208,6 +234,7 @@ const PaymentManagement = () => {
         customerName: '',
         customerPhone: '',
         project: '',
+        associate: '',
         amount: '',
         paymentType: '',
         paymentMethod: '',
@@ -387,7 +414,6 @@ const PaymentManagement = () => {
                     </td>
                     <td className="py-4 px-2">
                       <div className="flex items-center space-x-2">
-                        {payment.status === 'Received' ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Clock className="w-4 h-4 text-yellow-500" />}
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           payment.status === 'Received' ? 'bg-green-100 text-green-800' : 
                           payment.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -396,6 +422,11 @@ const PaymentManagement = () => {
                         }`}>
                           {payment.status}
                         </span>
+                        {payment.commissionGenerated && (
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-[10px] font-bold">
+                            COMM. PAID
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="py-4 px-2">
@@ -458,6 +489,16 @@ const PaymentManagement = () => {
                                       <span>Mark as Received</span>
                                     </button>
                                   </>
+                                )}
+
+                                {payment.status === 'Received' && !payment.commissionGenerated && (
+                                  <button
+                                    onClick={() => handleGenerateCommission(payment)}
+                                    className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-blue-700 hover:bg-blue-50"
+                                  >
+                                    <DollarSign className="w-4 h-4" />
+                                    <span>Generate Commission</span>
+                                  </button>
                                 )}
                                 
                                 <hr className="my-1" />
@@ -564,6 +605,24 @@ const PaymentManagement = () => {
                       ))}
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Assign Associate *</label>
+                    <select
+                      name="associate"
+                      value={formData.associate}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                      required
+                    >
+                      <option value="">Select Associate</option>
+                      {associates.map(associate => (
+                        <option key={associate._id} value={associate._id}>{associate.name} ({associate.role})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹) *</label>
                     <input
@@ -677,18 +736,18 @@ const PaymentManagement = () => {
                 {/* Payment Info */}
                 <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
                   <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-black rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl font-bold">{viewPayment.clientName.charAt(0)}</span>
+                    <span className="text-white text-xl font-bold">{(viewPayment.customerName || '').charAt(0)}</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">{viewPayment.clientName}</h3>
-                    <p className="text-gray-600">Payment ID: #{viewPayment.id}</p>
+                    <h3 className="text-xl font-bold text-gray-900">{viewPayment.customerName}</h3>
+                    <p className="text-gray-600">Payment ID: #{viewPayment._id}</p>
                     <div className="flex items-center space-x-2 mt-1">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         viewPayment.status === 'Received' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                       }`}>
                         {viewPayment.status}
                       </span>
-                      <span className="text-xs text-gray-500">{viewPayment.type}</span>
+                      <span className="text-xs text-gray-500">{viewPayment.paymentType}</span>
                     </div>
                   </div>
                 </div>
@@ -696,7 +755,7 @@ const PaymentManagement = () => {
                 {/* Payment Amount */}
                 <div className="bg-green-50 p-6 rounded-xl text-center">
                   <p className="text-3xl font-bold text-green-600">₹{viewPayment.amount.toLocaleString()}</p>
-                  <p className="text-gray-600 mt-1">{viewPayment.type}</p>
+                  <p className="text-gray-600 mt-1">{viewPayment.paymentType}</p>
                 </div>
 
                 {/* Payment Information */}
@@ -708,7 +767,7 @@ const PaymentManagement = () => {
                         <Building className="w-5 h-5 text-gray-400" />
                         <div>
                           <p className="text-sm text-gray-600">Project</p>
-                          <p className="font-medium">{viewPayment.project}</p>
+                          <p className="font-medium">{viewPayment.project?.name || 'No Project'}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
@@ -728,14 +787,14 @@ const PaymentManagement = () => {
                         <Calendar className="w-5 h-5 text-gray-400" />
                         <div>
                           <p className="text-sm text-gray-600">Payment Date</p>
-                          <p className="font-medium">{viewPayment.date}</p>
+                          <p className="font-medium">{new Date(viewPayment.createdAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Calendar className="w-5 h-5 text-gray-400" />
                         <div>
                           <p className="text-sm text-gray-600">Due Date</p>
-                          <p className="font-medium">{viewPayment.dueDate}</p>
+                          <p className="font-medium">{new Date(viewPayment.dueDate).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
@@ -13,6 +13,42 @@ const Login = () => {
     identifier: '',
     password: ''
   });
+
+  useEffect(() => {
+    // Check if already logged in and redirect
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    
+    if (token && userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        if (userData && userData.role) {
+          navigate(userData.role === 'admin' ? '/admin' : '/associate/dashboard');
+          return;
+        }
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    const urlUserStr = params.get('user');
+    const autoLogin = params.get('autoLogin');
+
+    if (autoLogin === 'true' && urlToken && urlUserStr) {
+      try {
+        const userData = JSON.parse(urlUserStr);
+        localStorage.setItem('token', urlToken);
+        localStorage.setItem('user', urlUserStr);
+        
+        window.location.href = userData.role === 'admin' ? '/admin' : '/associate/dashboard';
+      } catch (error) {
+        console.error('Auto login failed:', error);
+      }
+    }
+  }, [navigate]);
 
   const handleInputChange = (e) => {
     setFormData({

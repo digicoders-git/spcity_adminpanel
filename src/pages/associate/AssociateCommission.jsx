@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Table, 
   Thead, 
@@ -42,6 +43,8 @@ import { Download, TrendingUp } from 'lucide-react';
 import { commissionsAPI } from '../../utils/api';
 
 const AssociateCommission = () => {
+  const location = useLocation();
+  const [tabIndex, setTabIndex] = useState(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [commissions, setCommissions] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
@@ -56,11 +59,7 @@ const AssociateCommission = () => {
     notes: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [commissionsRes, withdrawalsRes, statsRes] = await Promise.all([
         commissionsAPI.getAll(),
@@ -71,8 +70,8 @@ const AssociateCommission = () => {
       setCommissions(commissionsRes.data || []);
       setWithdrawals(withdrawalsRes.data || []);
       setStats(statsRes.data || { totalEarned: 50000, totalWithdrawn: 0, pendingWithdrawal: 0, availableBalance: 50000 });
-    } catch (error) {
-      console.error('API Error:', error);
+    } catch (err) {
+      console.error('API Error:', err);
       // Set demo values for testing when API fails
       setCommissions([
         {
@@ -102,7 +101,16 @@ const AssociateCommission = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (location.pathname.includes('withdrawal')) setTabIndex(1);
+    else setTabIndex(0);
+  }, [location.pathname]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -232,7 +240,7 @@ const AssociateCommission = () => {
       </Box>
 
       <div className="card">
-        <Tabs>
+        <Tabs index={tabIndex} onChange={(index) => setTabIndex(index)} colorScheme="red">
           <TabList>
             <Tab>Commission History ({commissions.length})</Tab>
             <Tab>Withdrawal History ({withdrawals.length})</Tab>
@@ -398,7 +406,7 @@ const WithdrawalTable = ({ withdrawals, formatCurrency, getStatusColor }) => (
               </Badge>
             </Td>
           </Tr>
-        ))}}
+        ))}
       </Tbody>
     </Table>
   </Box>

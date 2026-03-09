@@ -19,7 +19,8 @@ import {
   Plus,
   Eye,
   CreditCard,
-  Clock
+  Clock,
+  Trophy
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -93,8 +94,18 @@ const AssociateLayout = () => {
       submenu: [
         { title: 'Total Amount', path: '/associate/commission/total', icon: DollarSign },
         { title: 'Withdrawal', path: '/associate/commission/withdrawal', icon: Wallet },
-        { title: 'History', path: '/associate/commission/history', icon: TrendingUp }
+        { title: 'History', path: '/associate/commissions', icon: TrendingUp }
       ]
+    },
+    {
+      title: 'Expenses',
+      icon: CreditCard,
+      path: '/associate/expenses'
+    },
+    {
+      title: 'Monthly Rewards',
+      icon: Trophy,
+      path: '/associate/rewards'
     },
     {
       title: 'Profile',

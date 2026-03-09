@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Table, 
   Thead, 
@@ -38,15 +39,19 @@ import {
   Spinner
 } from '@chakra-ui/react';
 import { Plus } from 'lucide-react';
-import { paymentsAPI, projectsAPI } from '../../utils/api';
+import { paymentsAPI, projectsAPI, expensesAPI } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 
 const AssociateAmount = () => {
+  const location = useLocation();
+  const [tabIndex, setTabIndex] = useState(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [modalType, setModalType] = useState('add');
+  const { user } = useAuth();
   const [payments, setPayments] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const [advanceAmount, setAdvanceAmount] = useState(0);
   
   const [formData, setFormData] = useState({
     customerName: '',
@@ -60,21 +65,42 @@ const AssociateAmount = () => {
     notes: ''
   });
 
-  useEffect(() => {
-    fetchPayments();
-    fetchProjects();
-  }, []);
 
-  const fetchPayments = async () => {
+  const fetchAdvanceSummary = useCallback(async () => {
+    try {
+      const res = await expensesAPI.getAdvanceSummary(user?._id || user?.id);
+      if (res.success) {
+        setAdvanceAmount(res.totalAdvance || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch advance summary', err);
+    }
+  }, [user]);
+
+  const fetchPayments = useCallback(async () => {
     try {
       const response = await paymentsAPI.getAll({ limit: 100 });
       setPayments(response.data);
-    } catch (error) {
-      toast({ title: 'Error fetching payments', description: error.message, status: 'error', duration: 3000 });
+    } catch (err) {
+      toast({ title: 'Error fetching payments', description: err.message, status: 'error', duration: 3000 });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchPayments();
+    fetchProjects();
+    if (user?._id || user?.id) {
+      fetchAdvanceSummary();
+    }
+  }, [user, fetchPayments, fetchAdvanceSummary]);
+
+  useEffect(() => {
+    if (location.pathname.includes('pending')) setTabIndex(2);
+    else if (location.pathname.includes('total')) setTabIndex(0);
+    else if (location.pathname.includes('advance')) setTabIndex(0); // Advance is a card
+  }, [location.pathname]);
 
   const fetchProjects = async () => {
     try {
@@ -111,7 +137,6 @@ const AssociateAmount = () => {
   };
 
   const handleAddPayment = () => {
-    setModalType('add');
     setFormData({
       customerName: '',
       customerPhone: '',
@@ -204,10 +229,19 @@ const AssociateAmount = () => {
             <StatHelpText>Outstanding balance</StatHelpText>
           </Stat>
         </Box>
+        <Box className="card">
+          <Stat>
+            <StatLabel>Total Advance Taken</StatLabel>
+            <StatNumber fontSize="2xl" color="red.500">
+              {formatCurrency(advanceAmount)}
+            </StatNumber>
+            <StatHelpText>Deductible from payout</StatHelpText>
+          </Stat>
+        </Box>
       </SimpleGrid>
 
       <div className="card">
-        <Tabs>
+        <Tabs index={tabIndex} onChange={(index) => setTabIndex(index)} colorScheme="red">
           <TabList>
             <Tab>All Payments ({payments.length})</Tab>
             <Tab>Received ({filterPaymentsByType('received').length})</Tab>
