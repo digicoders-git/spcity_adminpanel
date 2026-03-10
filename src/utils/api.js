@@ -354,41 +354,14 @@ export const invoicesAPI = {
   create: (invoiceData) =>
     apiRequest('/invoices', {
       method: 'POST',
-      body: {
-        customerName: invoiceData.customerName,
-        customerPhone: invoiceData.customerPhone,
-        customerEmail: invoiceData.customerEmail,
-        project: invoiceData.project,
-        items: invoiceData.items,
-        issueDate: invoiceData.issueDate || new Date(),
-        dueDate: invoiceData.dueDate,
-        status: invoiceData.status || 'Draft',
-        taxRate: invoiceData.taxRate || 0,
-        subtotal: invoiceData.subtotal,
-        taxAmount: invoiceData.taxAmount,
-        total: invoiceData.total,
-        notes: invoiceData.notes,
-      },
+      body: invoiceData,
     }),
 
   // Update invoice
   update: (id, invoiceData) =>
     apiRequest(`/invoices/${id}`, {
       method: 'PUT',
-      body: {
-        customerName: invoiceData.customerName,
-        customerPhone: invoiceData.customerPhone,
-        customerEmail: invoiceData.customerEmail,
-        project: invoiceData.project,
-        items: invoiceData.items,
-        dueDate: invoiceData.dueDate,
-        status: invoiceData.status,
-        taxRate: invoiceData.taxRate,
-        subtotal: invoiceData.subtotal,
-        taxAmount: invoiceData.taxAmount,
-        total: invoiceData.total,
-        notes: invoiceData.notes,
-      },
+      body: invoiceData,
     }),
 
   // Delete invoice
