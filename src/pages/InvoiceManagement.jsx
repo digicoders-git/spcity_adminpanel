@@ -8,15 +8,18 @@ import {
 import { toast } from 'react-toastify';
 import { useReactToPrint } from 'react-to-print';
 import Swal from 'sweetalert2';
-import { invoicesAPI, projectsAPI } from '../utils/api';
+import { invoicesAPI, projectsAPI, associatesAPI } from '../utils/api';
 import { Pagination, ExportButton } from '../utils/tableUtils.jsx';
 import InvoiceView from '../components/InvoiceView';
+import { useAuth } from '../context/AuthContext';
 
 const EMPTY_FORM = {
   customerName: '',
   customerPhone: '',
   customerEmail: '',
   project: '',
+  associate: '',
+  reason: '',
   items: [{ description: '', quantity: 1, unitPrice: 0 }],
   dueDate: '',
   notes: '',
@@ -25,11 +28,13 @@ const EMPTY_FORM = {
 };
 
 const InvoiceManagement = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [associates, setAssociates] = useState([]);
   const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0 });
   const [showModal, setShowModal] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
@@ -83,10 +88,20 @@ const InvoiceManagement = () => {
     }
   }, []);
 
+  const fetchAssociates = useCallback(async () => {
+    try {
+      const res = await associatesAPI.getAll();
+      setAssociates(res.data || []);
+    } catch (error) {
+      console.error('Error fetching associates:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchInvoices();
     fetchProjects();
-  }, [fetchInvoices, fetchProjects]);
+    fetchAssociates();
+  }, [fetchInvoices, fetchProjects, fetchAssociates]);
 
   /* ================= FORM HELPERS ================= */
   const handleItemChange = (index, field, value) => {
@@ -134,6 +149,8 @@ const InvoiceManagement = () => {
       customerPhone: invoice.customerPhone || '',
       customerEmail: invoice.customerEmail || '',
       project: invoice.project?._id || '',
+      associate: invoice.associate?._id || '',
+      reason: invoice.reason || '',
       items: invoice.items?.map(i => ({
         description: i.description,
         quantity: i.quantity,
@@ -229,13 +246,15 @@ const InvoiceManagement = () => {
           </h1>
           <p className="text-gray-500 mt-1 font-medium">Create, manage and track professional invoices</p>
         </div>
-        <button 
-          onClick={openCreate}
-          className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-red-200"
-        >
-          <Plus size={20} />
-          Generate New Invoice
-        </button>
+        {user?.role === 'admin' && (
+          <button 
+            onClick={openCreate}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-red-200"
+          >
+            <Plus size={20} />
+            Generate New Invoice
+          </button>
+        )}
       </div>
 
       {/* Stats Quick Grid */}
@@ -292,46 +311,63 @@ const InvoiceManagement = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50/50 text-gray-500 text-xs uppercase tracking-wider text-left border-b border-gray-100">
-                  <th className="px-6 py-4 font-black">Invoice #</th>
-                  <th className="px-6 py-4 font-black">Client Details</th>
-                  <th className="px-6 py-4 font-black">Project</th>
-                  <th className="px-6 py-4 font-black">Total Amount</th>
-                  <th className="px-6 py-4 font-black">Due Date</th>
-                  <th className="px-6 py-4 font-black">Status</th>
-                  <th className="px-6 py-4 font-black text-right">Actions</th>
+                  <th className="px-6 py-4 font-black whitespace-nowrap">Invoice #</th>
+                  <th className="px-6 py-4 font-black whitespace-nowrap">Client/Associate</th>
+                  <th className="px-6 py-4 font-black whitespace-nowrap">Reason/Project</th>
+                  <th className="px-6 py-4 font-black whitespace-nowrap">Total Amount</th>
+                  <th className="px-6 py-4 font-black whitespace-nowrap">Due Date</th>
+                  <th className="px-6 py-4 font-black whitespace-nowrap">Status</th>
+                  <th className="px-6 py-4 font-black text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {invoices.length > 0 ? invoices.map(inv => (
                   <tr key={inv._id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className="font-bold text-gray-900">#{inv.invoiceNumber}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 min-w-[200px]">
                       <div>
-                        <p className="font-bold text-gray-900">{inv.customerName}</p>
-                        <p className="text-xs text-gray-500">{inv.customerPhone}</p>
+                        {inv.associate ? (
+                          <>
+                            <p className="font-bold text-blue-700 bg-blue-50 w-fit px-2 py-0.5 rounded-md text-xs mb-1">Associate</p>
+                            <p className="font-bold text-gray-900">{inv.associate.name}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-bold text-gray-900">{inv.customerName}</p>
+                            <p className="text-xs text-gray-500">{inv.customerPhone}</p>
+                          </>
+                        )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 italic text-sm text-gray-600">
-                      {inv.project?.name || 'N/A'}
+                    <td className="px-6 py-4 italic text-sm text-gray-600 min-w-[200px]">
+                      {inv.reason ? (
+                        <p className="font-medium text-gray-800 not-italic">{inv.reason}</p>
+                      ) : (
+                        <p>{inv.project?.name || 'N/A'}</p>
+                      )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className="font-black text-gray-900">₹{Number(inv.total || 0).toLocaleString()}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
                       {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusBadge(inv.status)}`}>
                         {inv.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-end gap-2">
                         <ActionButton icon={Eye} color="blue" onClick={() => setViewInvoice(inv)} tooltip="View Invoice" />
-                        <ActionButton icon={Edit} color="gray" onClick={() => openEdit(inv)} tooltip="Edit" />
-                        <ActionButton icon={Trash2} color="red" onClick={() => handleDelete(inv._id)} tooltip="Delete" />
+                        {user?.role === 'admin' && (
+                          <>
+                            <ActionButton icon={Edit} color="gray" onClick={() => openEdit(inv)} tooltip="Edit" />
+                            <ActionButton icon={Trash2} color="red" onClick={() => handleDelete(inv._id)} tooltip="Delete" />
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -367,11 +403,22 @@ const InvoiceManagement = () => {
             {/* Client & Project Info */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Client Details</h3>
-                <InputField label="Customer Name" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} required />
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Client or Associate</h3>
+                <InputField label="Customer Name (Or keep blank if picking Associate)" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} />
                 <div className="grid grid-cols-2 gap-4">
-                  <InputField label="Phone" value={formData.customerPhone} onChange={e => setFormData({ ...formData, customerPhone: e.target.value })} required />
-                  <InputField label="Email (Optional)" value={formData.customerEmail} onChange={e => setFormData({ ...formData, customerEmail: e.target.value })} type="email" />
+                  <InputField label="Phone" value={formData.customerPhone} onChange={e => setFormData({ ...formData, customerPhone: e.target.value })} />
+                  <InputField label="Email" value={formData.customerEmail} onChange={e => setFormData({ ...formData, customerEmail: e.target.value })} type="email" />
+                </div>
+                <div className="space-y-1 mt-4">
+                  <label className="text-xs font-black text-blue-500 uppercase">Or Select Associate</label>
+                  <select 
+                    value={formData.associate} 
+                    onChange={e => setFormData({ ...formData, associate: e.target.value })}
+                    className="w-full px-4 py-2 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-medium bg-blue-50/50" 
+                  >
+                    <option value="">-- Choose Associate --</option>
+                    {associates.map(a => <option key={a._id} value={a._id}>{a.name} ({a.phone})</option>)}
+                  </select>
                 </div>
               </div>
               <div className="space-y-4">
@@ -388,6 +435,7 @@ const InvoiceManagement = () => {
                     {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
                   </select>
                 </div>
+                <InputField label="Reason / Subject" value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} placeholder="E.g., Event Charge, Fine, Setup Fee..." />
                 <div className="grid grid-cols-2 gap-4">
                   <InputField label="Due Date" type="date" value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} required />
                   <div className="space-y-1">

@@ -105,6 +105,7 @@ function AppRoutes() {
         <Route path="commission/withdrawal" element={<AssociateCommission />} />
         <Route path="commissions" element={<AssociateCommission />} />
         <Route path="expenses" element={<AssociateExpense />} />
+        <Route path="invoices" element={<InvoiceManagement />} />
         <Route path="rewards" element={<AssociateReward />} />
         <Route path="profile" element={<AssociateProfile />} />
       </Route>

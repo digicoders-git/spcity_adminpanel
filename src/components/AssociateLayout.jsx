@@ -20,7 +20,8 @@ import {
   Eye,
   CreditCard,
   Clock,
-  Trophy
+  Trophy,
+  Receipt
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -106,6 +107,11 @@ const AssociateLayout = () => {
       title: 'Expenses',
       icon: CreditCard,
       path: '/associate/expenses'
+    },
+    {
+      title: 'Invoices',
+      icon: Receipt,
+      path: '/associate/invoices'
     },
     {
       title: 'Monthly Rewards',
