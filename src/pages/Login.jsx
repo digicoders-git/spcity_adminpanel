@@ -15,7 +15,26 @@ const Login = () => {
   });
 
   useEffect(() => {
-    // Check if already logged in and redirect
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    const urlUserStr = params.get('user');
+    const autoLogin = params.get('autoLogin');
+
+    if (autoLogin === 'true' && urlToken && urlUserStr) {
+      try {
+        const userData = JSON.parse(urlUserStr);
+        localStorage.setItem('token', urlToken);
+        localStorage.setItem('user', urlUserStr);
+        
+        // Use window.location.href for a full clean redirect based on the NEW user role
+        window.location.href = userData.role === 'admin' ? '/admin' : '/associate/dashboard';
+        return; 
+      } catch (error) {
+        console.error('Auto login failed:', error);
+      }
+    }
+
+    // Regular login check
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
     
@@ -29,23 +48,6 @@ const Login = () => {
       } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-      }
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get('token');
-    const urlUserStr = params.get('user');
-    const autoLogin = params.get('autoLogin');
-
-    if (autoLogin === 'true' && urlToken && urlUserStr) {
-      try {
-        const userData = JSON.parse(urlUserStr);
-        localStorage.setItem('token', urlToken);
-        localStorage.setItem('user', urlUserStr);
-        
-        window.location.href = userData.role === 'admin' ? '/admin' : '/associate/dashboard';
-      } catch (error) {
-        console.error('Auto login failed:', error);
       }
     }
   }, [navigate]);

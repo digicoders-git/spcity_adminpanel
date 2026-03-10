@@ -282,8 +282,29 @@ const AssociateLayout = () => {
               </button>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">Welcome back, {user?.name}</span>
+            <div className="flex items-center space-x-6">
+              <button 
+                onClick={() => {
+                  const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 
+                                   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+                                     ? (window.location.port === "5174" ? "http://localhost:5173" : "http://localhost:5174") 
+                                     : "https://spcity-website.vercel.app");
+                  window.location.href = websiteUrl;
+                }}
+                className="hidden sm:flex items-center space-x-2 text-sm font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-xl transition-all duration-300 border border-red-100"
+              >
+                <TrendingUp className="w-4 h-4" />
+                <span>Go to Website</span>
+              </button>
+              <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-bold text-gray-900 leading-none">{user?.name}</p>
+                  <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider font-bold">Associate</p>
+                </div>
+                <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-black rounded-full flex items-center justify-center shadow-md">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+              </div>
             </div>
           </div>
         </header>
