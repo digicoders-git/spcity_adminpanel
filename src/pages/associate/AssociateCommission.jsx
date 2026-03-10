@@ -383,6 +383,9 @@ const WithdrawalTable = ({ withdrawals, formatCurrency, getStatusColor }) => (
       <Thead>
         <Tr>
           <Th>Amount</Th>
+          <Th>TDS (5%)</Th>
+          <Th>Service Tax (5%)</Th>
+          <Th>Net Received</Th>
           <Th>Date</Th>
           <Th>Method</Th>
           <Th>Reference</Th>
@@ -393,15 +396,24 @@ const WithdrawalTable = ({ withdrawals, formatCurrency, getStatusColor }) => (
         {withdrawals.map((withdrawal) => (
           <Tr key={withdrawal._id}>
             <Td>
-              <Text fontWeight="medium">{formatCurrency(withdrawal.amount)}</Text>
-            </Td>
-            <Td>{new Date(withdrawal.createdAt).toLocaleDateString()}</Td>
-            <Td>{withdrawal.method}</Td>
-            <Td>
-              <Text fontSize="sm" fontFamily="mono">{withdrawal.reference}</Text>
+              <Text fontWeight="medium" color="blue.600">{formatCurrency(withdrawal.amount)}</Text>
             </Td>
             <Td>
-              <Badge colorScheme={getStatusColor(withdrawal.status)}>
+              <Text fontSize="sm" color="red.500">{withdrawal.tdsAmount ? formatCurrency(withdrawal.tdsAmount) : '---'}</Text>
+            </Td>
+            <Td>
+              <Text fontSize="sm" color="red.500">{withdrawal.serviceTaxAmount ? formatCurrency(withdrawal.serviceTaxAmount) : '---'}</Text>
+            </Td>
+            <Td>
+              <Text fontWeight="black" color="green.600">{withdrawal.netAmount ? formatCurrency(withdrawal.netAmount) : '---'}</Text>
+            </Td>
+            <Td fontSize="sm">{new Date(withdrawal.createdAt).toLocaleDateString()}</Td>
+            <Td fontSize="sm">{withdrawal.method}</Td>
+            <Td>
+              <Text fontSize="xs" fontFamily="mono">{withdrawal.reference}</Text>
+            </Td>
+            <Td>
+              <Badge colorScheme={getStatusColor(withdrawal.status)} variant="solid" borderRadius="full" px={2} fontSize="10px">
                 {withdrawal.status}
               </Badge>
             </Td>

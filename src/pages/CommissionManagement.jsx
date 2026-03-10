@@ -269,6 +269,8 @@ const CommissionManagement = () => {
                     <Tr>
                       <Th>Associate</Th>
                       <Th>Amount</Th>
+                      <Th>Tax Deductions</Th>
+                      <Th>Net Payable</Th>
                       <Th>Method</Th>
                       <Th>Account Details</Th>
                       <Th>Date Requested</Th>
@@ -287,8 +289,23 @@ const CommissionManagement = () => {
                           </VStack>
                         </Td>
                         <Td>
-                          <Text fontWeight="black" color="green.600">
+                          <Text fontWeight="black" color="blue.600">
                             {formatCurrency(withdrawal.amount)}
+                          </Text>
+                        </Td>
+                        <Td>
+                          {withdrawal.status === 'Completed' ? (
+                            <VStack align="start" spacing={0}>
+                              <Text fontSize="xs" fontWeight="bold" color="red.500">TDS (5%): {formatCurrency(withdrawal.tdsAmount || 0)}</Text>
+                              <Text fontSize="xs" fontWeight="bold" color="red.500">Service Tax (5%): {formatCurrency(withdrawal.serviceTaxAmount || 0)}</Text>
+                            </VStack>
+                          ) : (
+                            <Text fontSize="xs" color="gray.400">Calculated on approval</Text>
+                          )}
+                        </Td>
+                        <Td>
+                          <Text fontWeight="black" color="green.600">
+                            {withdrawal.status === 'Completed' ? formatCurrency(withdrawal.netAmount || 0) : '---'}
                           </Text>
                         </Td>
                         <Td>
@@ -374,6 +391,19 @@ const CommissionManagement = () => {
                       <Text fontSize="xs" fontWeight="black" color="gray.400" textTransform="uppercase">Requested Amnt</Text>
                       <Text fontWeight="black" color="blue.600">{formatCurrency(selectedWithdrawal.amount)}</Text>
                     </div>
+                    
+                    {/* 🔥 Tax Preview */}
+                    <div className="col-span-2 bg-white/50 p-2 rounded border border-dashed border-gray-300">
+                       <HStack justify="space-between">
+                          <Text fontSize="xs" color="gray.600">TDS (5%)</Text>
+                          <Text fontSize="xs" fontWeight="bold" color="red.500">-{formatCurrency(selectedWithdrawal.amount * 0.05)}</Text>
+                       </HStack>
+                       <HStack justify="space-between">
+                          <Text fontSize="xs" color="gray.600">Service Tax (5%)</Text>
+                          <Text fontSize="xs" fontWeight="bold" color="red.500">-{formatCurrency(selectedWithdrawal.amount * 0.05)}</Text>
+                       </HStack>
+                    </div>
+
                     <div className="col-span-2 border-t border-gray-200 mt-2 pt-2">
                        <HStack justify="space-between" align="center">
                           <div>
@@ -383,8 +413,8 @@ const CommissionManagement = () => {
                             )}
                           </div>
                           <div className="text-right">
-                             <Text fontSize="xs" fontWeight="black" color="gray.400" textTransform="uppercase">Net Payable</Text>
-                             <Text fontWeight="black" fontSize="xl" color="green.600">{formatCurrency(Math.max(0, selectedWithdrawal.amount - (advanceSummary.totalAdvance || 0)))}</Text>
+                             <Text fontSize="xs" fontWeight="black" color="gray.400" textTransform="uppercase">Final Net Payable</Text>
+                             <Text fontWeight="black" fontSize="xl" color="green.600">{formatCurrency(Math.max(0, selectedWithdrawal.amount - (selectedWithdrawal.amount * 0.1) - (advanceSummary.totalAdvance || 0)))}</Text>
                           </div>
                        </HStack>
                     </div>
