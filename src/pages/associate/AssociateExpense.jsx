@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   DollarSign, 
   Calendar, 
@@ -13,6 +14,10 @@ import { useAuth } from '../../context/AuthContext';
 
 const AssociateExpense = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const targetAssociateId = queryParams.get('associate') || user?._id || user?.id;
+
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState([]);
   const [summary, setSummary] = useState({ totalAdvance: 0, totalSalary: 0 });
@@ -20,7 +25,7 @@ const AssociateExpense = () => {
   const fetchMyExpenses = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await expensesAPI.getAll({ associate: user?._id || user?.id });
+      const res = await expensesAPI.getAll({ associate: targetAssociateId });
       if (res.success) {
         setExpenses(res.data);
         
@@ -39,20 +44,20 @@ const AssociateExpense = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [targetAssociateId]);
 
   useEffect(() => {
-    if (user?._id || user?.id) {
+    if (targetAssociateId) {
       fetchMyExpenses();
     }
-  }, [user, fetchMyExpenses]);
+  }, [targetAssociateId, fetchMyExpenses]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="px-2">
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Advances & Expenses</h1>
-        <p className="text-gray-500 mt-1 font-medium italic">Track your received advances, salaries, and other payouts from the company</p>
+        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Advances & Expenses</h1>
+        <p className="text-gray-500 mt-1 font-medium italic">Track received advances, salaries, and other payouts from the company</p>
       </div>
 
       {/* Summary Cards */}

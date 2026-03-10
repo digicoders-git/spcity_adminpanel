@@ -67,6 +67,11 @@ const AssociateLayout = () => {
       ]
     },
     {
+      title: 'My Network',
+      icon: Users,
+      path: '/associate/associates'
+    },
+    {
       title: 'Site Visits',
       icon: MapPin,
       key: 'visits',

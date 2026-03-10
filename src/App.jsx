@@ -88,6 +88,7 @@ function AppRoutes() {
         <Route index element={<AssociateDashboard />} />
         <Route path="dashboard" element={<AssociateDashboard />} />
         <Route path="projects" element={<AssociateProjects />} />
+        <Route path="associates" element={<AssociateManagement />} />
         <Route path="leads" element={<AssociateLeads />} />
         <Route path="leads/add" element={<AssociateLeads />} />
         <Route path="leads/followup" element={<AssociateLeads />} />

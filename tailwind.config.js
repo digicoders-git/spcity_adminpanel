@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Source Sans 3"', 'sans-serif'],
+      },
       colors: {
         primary: {
           50: '#fdf2f8',

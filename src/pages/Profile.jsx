@@ -209,7 +209,7 @@ const Profile = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Profile</h1>
-          <p className="text-gray-600 mt-2">Manage your account information and view system overview</p>
+          <p className="text-gray-600 mt-2">Manage your account information</p>
         </div>
         {!isEditing ? (
           <button 
@@ -237,70 +237,6 @@ const Profile = () => {
             </button>
           </div>
         )}
-      </div>
-
-      {/* System Overview Stats */}
-      <div className="card">
-        <h2 className="text-lg font-semibold mb-4 flex items-center space-x-2">
-          <TrendingUp className="w-5 h-5 text-blue-600" />
-          <span>System Overview</span>
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-blue-50 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">Total Leads</p>
-                <p className="text-2xl font-bold text-blue-700">{stats.totalLeads}</p>
-              </div>
-              <Users className="w-8 h-8 text-blue-500" />
-            </div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">Total Projects</p>
-                <p className="text-2xl font-bold text-green-700">{stats.totalProjects}</p>
-              </div>
-              <Building className="w-8 h-8 text-green-500" />
-            </div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-600 font-medium">Team Members</p>
-                <p className="text-2xl font-bold text-purple-700">{stats.totalAssociates}</p>
-              </div>
-              <User className="w-8 h-8 text-purple-500" />
-            </div>
-          </div>
-          <div className="bg-orange-50 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-orange-600 font-medium">Total Revenue</p>
-                <p className="text-2xl font-bold text-orange-700">{formatCurrency(stats.totalRevenue)}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-orange-500" />
-            </div>
-          </div>
-          <div className="bg-teal-50 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-teal-600 font-medium">Total Commissions</p>
-                <p className="text-2xl font-bold text-teal-700">{formatCurrency(stats.totalCommissions)}</p>
-              </div>
-              <Award className="w-8 h-8 text-teal-500" />
-            </div>
-          </div>
-          <div className="bg-red-50 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-red-600 font-medium">Pending Withdrawals</p>
-                <p className="text-2xl font-bold text-red-700">{stats.pendingWithdrawals}</p>
-              </div>
-              <MapPin className="w-8 h-8 text-red-500" />
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

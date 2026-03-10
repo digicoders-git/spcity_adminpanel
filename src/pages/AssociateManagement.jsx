@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
+import { useAuth } from '../context/AuthContext';
 import { Pagination, ExportButton, usePagination } from '../utils/tableUtils.jsx';
 import { associatesAPI } from '../utils/api';
 
@@ -25,6 +26,7 @@ const COMMISSION_RANKS = [
 
 const AssociateManagement = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [associates, setAssociates] = useState([]);
@@ -35,7 +37,6 @@ const AssociateManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewAssociate, setViewAssociate] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -176,7 +177,6 @@ const AssociateManagement = () => {
 
   const handleViewAssociate = (associate) => {
     setViewAssociate(associate);
-    setShowPassword(false);
     setShowViewModal(true);
   };
 
@@ -331,6 +331,8 @@ const AssociateManagement = () => {
                 <th className="text-left py-4 px-2 font-semibold text-gray-900">Role</th>
                 <th className="text-left py-4 px-2 font-semibold text-gray-900">Department</th>
                 <th className="text-left py-4 px-2 font-semibold text-gray-900">Status</th>
+                <th className="text-left py-4 px-2 font-semibold text-gray-900">Sponsor</th>
+                <th className="text-left py-4 px-2 font-semibold text-gray-900">Level</th>
                 <th className="text-left py-4 px-2 font-semibold text-gray-900">Date</th>
                 <th className="text-left py-4 px-2 font-semibold text-gray-900">Actions</th>
               </tr>
@@ -385,6 +387,14 @@ const AssociateManagement = () => {
                       </span>
                     </td>
                     <td className="py-4 px-2">
+                      <span className="text-sm font-semibold text-gray-800">{associate.sponsor?.name || 'Admin'}</span>
+                    </td>
+                    <td className="py-4 px-2">
+                       <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold text-sm shadow-sm ring-1 ring-blue-200">
+                         {associate.level || 1}
+                       </span>
+                    </td>
+                    <td className="py-4 px-2">
                       <div className="flex items-center space-x-2">
                         <Calendar className="w-4 h-4 text-gray-400" />
                         <span className="text-sm text-gray-600">{new Date(associate.createdAt).toLocaleDateString()}</span>
@@ -424,7 +434,13 @@ const AssociateManagement = () => {
                           <Key className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => navigate('/admin/expenses?associate=' + associate._id)}
+                          onClick={() => {
+                            if (user?.role === 'admin') {
+                              navigate('/admin/expenses?associate=' + associate._id);
+                            } else {
+                              navigate('/associate/expenses?associate=' + associate._id);
+                            }
+                          }}
                           className="btn-primary p-2 rounded-lg bg-orange-600 hover:bg-orange-700"
                           title="View Expenses/Advances"
                         >
@@ -709,10 +725,24 @@ const AssociateManagement = () => {
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
+                        <Users className="w-5 h-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-600">Sponsor</p>
+                          <p className="font-medium">{viewAssociate.sponsor?.name || 'Admin'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
                         <DollarSign className="w-5 h-5 text-gray-400" />
                         <div>
                           <p className="text-sm text-gray-600">Commission Rate</p>
                           <p className="font-medium">{viewAssociate.commissionRate || 0}%</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">L</div>
+                        <div>
+                          <p className="text-sm text-gray-600">Level</p>
+                          <p className="font-medium">{viewAssociate.level || 1}</p>
                         </div>
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../utils/api';
 
 const AuthContext = createContext();
@@ -53,13 +53,13 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
   };
 
-  const updateUser = (userData) => {
+  const updateUser = useCallback((userData) => {
     setUser(prevUser => {
       const updatedUser = { ...prevUser, ...userData };
       localStorage.setItem('user', JSON.stringify(updatedUser));
       return updatedUser;
     });
-  };
+  }, []);
 
   const isAdmin = () => {
     return user && user.role === 'admin';
