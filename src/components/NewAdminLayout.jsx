@@ -18,8 +18,11 @@ import {
   FileText,
   TrendingUp,
   CreditCard,
-  Trophy
+  Trophy,
+  Bell,
+  Check
 } from 'lucide-react';
+import { notificationsAPI } from '../utils/api_notifications';
 
 const NewAdminLayout = () => {
   const navigate = useNavigate();
@@ -30,12 +33,52 @@ const NewAdminLayout = () => {
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Update time every second
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await notificationsAPI.getAll();
+      setNotifications(res.data || []);
+      setUnreadCount(res.unreadCount || 0);
+    } catch {
+      console.error('Error fetching notifications');
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await notificationsAPI.markAsRead(id);
+      fetchNotifications();
+    } catch {
+      console.error('Error marking as read');
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationsAPI.markAllAsRead();
+      fetchNotifications();
+    } catch {
+      console.error('Error marking all as read');
+    }
+  };
+
+  // Update time every second & poll notifications
   React.useEffect(() => {
+    fetchNotifications();
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    return () => clearInterval(timer);
+    // Poll notifications every 30 secs
+    const pollNotifs = setInterval(() => {
+      fetchNotifications();
+    }, 30000);
+    return () => {
+      clearInterval(timer);
+      clearInterval(pollNotifs);
+    }
   }, []);
 
   const formatTime = (date) => {
@@ -241,6 +284,65 @@ const NewAdminLayout = () => {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Notifications Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+                >
+                  <Bell className="w-6 h-6 text-gray-600" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {notifOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                      <h3 className="font-bold text-gray-900">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={handleMarkAllAsRead}
+                          className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors"
+                        >
+                          <Check size={14} /> Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                      {notifications.length > 0 ? (
+                        notifications.map(notif => (
+                          <div 
+                            key={notif._id} 
+                            onClick={() => {
+                               if(!notif.isRead) handleMarkAsRead(notif._id);
+                               if(notif.link) navigate(notif.link);
+                            }}
+                            className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${notif.isRead ? 'opacity-60' : 'bg-red-50/20'}`}
+                          >
+                            <div className="flex justify-between items-start mb-1">
+                              <h4 className={`text-sm ${notif.isRead ? 'font-semibold text-gray-700' : 'font-black text-gray-900'}`}>{notif.title}</h4>
+                              {!notif.isRead && <span className="w-2 h-2 rounded-full bg-red-500 mt-1"></span>}
+                            </div>
+                            <p className="text-xs text-gray-600 leading-relaxed">{notif.message}</p>
+                            <p className="text-[10px] text-gray-400 mt-2 font-medium uppercase tracking-wider">
+                              {new Date(notif.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center text-gray-500 flex flex-col items-center gap-2">
+                          <Bell className="w-8 h-8 text-gray-300" />
+                          <p className="text-sm font-medium">No new notifications</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-red-600 to-black rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
