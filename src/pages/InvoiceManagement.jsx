@@ -17,6 +17,29 @@ const EMPTY_FORM = {
   customerName: '',
   customerPhone: '',
   customerEmail: '',
+  fatherName: '',
+  customerAddress: '',
+  referenceId: '',
+  plotId: '',
+  plotNo: '',
+  bookingArea: '',
+  plotFacing: '',
+  rate: 0,
+  plcAmount: 0,
+  developmentCharge: 0,
+  paidAmount: 0,
+  discount: 0,
+  balanceAmount: 0,
+  paymentMode: 'Cash',
+  instrumentNo: '',
+  instrumentDate: '',
+  bankName: '',
+  depositDate: '',
+  remark: '',
+  bankAccountName: 'State Bank Of India',
+  bankAccountNumber: '44294171198',
+  bankIFSC: 'SBIN0011643',
+  bankBranchAddress: 'Gomti Nagar, Lucknow, UP',
   project: '',
   associate: '',
   reason: '',
@@ -103,6 +126,32 @@ const InvoiceManagement = () => {
     fetchAssociates();
   }, [fetchInvoices, fetchProjects, fetchAssociates]);
 
+  useEffect(() => {
+    // Auto calculate Total and Balance for Property Fields
+    const area = parseFloat(formData.bookingArea) || 0;
+    const rate = Number(formData.rate) || 0;
+    const plc = Number(formData.plcAmount) || 0;
+    const dev = Number(formData.developmentCharge) || 0;
+    const discount = Number(formData.discount) || 0;
+    const currPaid = Number(formData.paidAmount) || 0;
+    const totalPaid = Number(formData.totalPaid) || 0;
+
+    const propertyTotal = (rate * area) + plc + dev;
+    
+    // If it's a new invoice and totalPaid is 0, let's suggest/sync it with currPaid
+    // But don't force it if user manually cleared it
+    const effectiveTotalPaid = totalPaid === 0 ? currPaid : totalPaid;
+    const balance = propertyTotal - effectiveTotalPaid - discount;
+
+    setFormData(prev => ({
+      ...prev,
+      total: propertyTotal,
+      balanceAmount: balance,
+      // If totalPaid is 0 but currPaid is entered, help user by filling it
+      ...(prev.totalPaid === 0 && currPaid > 0 ? { totalPaid: currPaid } : {})
+    }));
+  }, [formData.rate, formData.bookingArea, formData.plcAmount, formData.developmentCharge, formData.paidAmount, formData.totalPaid, formData.discount]);
+
   /* ================= FORM HELPERS ================= */
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
@@ -148,6 +197,29 @@ const InvoiceManagement = () => {
       customerName: invoice.customerName || '',
       customerPhone: invoice.customerPhone || '',
       customerEmail: invoice.customerEmail || '',
+      fatherName: invoice.fatherName || '',
+      customerAddress: invoice.customerAddress || '',
+      referenceId: invoice.referenceId || '',
+      plotId: invoice.plotId || '',
+      plotNo: invoice.plotNo || '',
+      bookingArea: invoice.bookingArea || '',
+      plotFacing: invoice.plotFacing || '',
+      rate: invoice.rate || 0,
+      plcAmount: invoice.plcAmount || 0,
+      developmentCharge: invoice.developmentCharge || 0,
+      paidAmount: invoice.paidAmount || 0,
+      discount: invoice.discount || 0,
+      balanceAmount: invoice.balanceAmount || 0,
+      paymentMode: invoice.paymentMode || 'Cash',
+      instrumentNo: invoice.instrumentNo || '',
+      instrumentDate: invoice.instrumentDate ? invoice.instrumentDate.split('T')[0] : '',
+      bankName: invoice.bankName || '',
+      depositDate: invoice.depositDate ? invoice.depositDate.split('T')[0] : '',
+      remark: invoice.remark || '',
+      bankAccountName: invoice.bankAccountName || 'State Bank Of India',
+      bankAccountNumber: invoice.bankAccountNumber || '44294171198',
+      bankIFSC: invoice.bankIFSC || 'SBIN0011643',
+      bankBranchAddress: invoice.bankBranchAddress || 'Gomti Nagar, Lucknow, UP',
       project: invoice.project?._id || '',
       associate: invoice.associate?._id || '',
       reason: invoice.reason || '',
@@ -169,7 +241,21 @@ const InvoiceManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { subtotal, tax, total } = calculateTotal();
+    // Decide which total to use
+    let subtotal, tax, finalTotal;
+    
+    if (formData.rate > 0) {
+      // Use Property Calculation
+      subtotal = formData.total; // already calculated in useEffect
+      tax = 0; // standard property receipts usually don't show separate tax lines in this template
+      finalTotal = formData.total;
+    } else {
+      // Use standard items calculation
+      const calculated = calculateTotal();
+      subtotal = calculated.subtotal;
+      tax = calculated.tax;
+      finalTotal = calculated.total;
+    }
 
     const payload = {
       ...formData,
@@ -180,7 +266,7 @@ const InvoiceManagement = () => {
       })),
       subtotal,
       taxAmount: tax,
-      total,
+      total: finalTotal,
     };
 
     try {
@@ -401,16 +487,18 @@ const InvoiceManagement = () => {
         <Modal title={`${modalType === 'create' ? 'Generate New' : 'Edit'} Invoice`} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit} className="space-y-8 p-1">
             {/* Client & Project Info */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Client or Associate</h3>
-                <InputField label="Customer Name (Or keep blank if picking Associate)" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} />
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Client Details</h3>
+                <InputField label="Customer Name" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} required />
+                <InputField label="Father's Name (S/O)" value={formData.fatherName} onChange={e => setFormData({ ...formData, fatherName: e.target.value })} />
                 <div className="grid grid-cols-2 gap-4">
-                  <InputField label="Phone" value={formData.customerPhone} onChange={e => setFormData({ ...formData, customerPhone: e.target.value })} />
+                  <InputField label="Phone" value={formData.customerPhone} onChange={e => setFormData({ ...formData, customerPhone: e.target.value })} required />
                   <InputField label="Email" value={formData.customerEmail} onChange={e => setFormData({ ...formData, customerEmail: e.target.value })} type="email" />
                 </div>
+                <InputField label="Customer Address" value={formData.customerAddress} onChange={e => setFormData({ ...formData, customerAddress: e.target.value })} />
                 <div className="space-y-1 mt-4">
-                  <label className="text-xs font-black text-blue-500 uppercase">Or Select Associate</label>
+                  <label className="text-xs font-black text-blue-500 uppercase tracking-wider">Or Select Associate</label>
                   <select 
                     value={formData.associate} 
                     onChange={e => setFormData({ ...formData, associate: e.target.value })}
@@ -421,10 +509,11 @@ const InvoiceManagement = () => {
                   </select>
                 </div>
               </div>
+
               <div className="space-y-4">
-                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Invoice Details</h3>
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Plot & Mapping</h3>
                 <div className="space-y-1">
-                  <label className="text-xs font-black text-gray-500 uppercase">Select Project</label>
+                  <label className="text-xs font-black text-gray-500 uppercase tracking-wider">Select Project</label>
                   <select 
                     value={formData.project} 
                     onChange={e => setFormData({ ...formData, project: e.target.value })}
@@ -435,21 +524,82 @@ const InvoiceManagement = () => {
                     {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
                   </select>
                 </div>
-                <InputField label="Reason / Subject" value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} placeholder="E.g., Event Charge, Fine, Setup Fee..." />
+                <div className="grid grid-cols-2 gap-4">
+                  <InputField label="Plot ID" value={formData.plotId} onChange={e => setFormData({ ...formData, plotId: e.target.value })} />
+                  <InputField label="Plot No" value={formData.plotNo} onChange={e => setFormData({ ...formData, plotNo: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <InputField label="Area (Sq.Ft.)" value={formData.bookingArea} onChange={e => setFormData({ ...formData, bookingArea: e.target.value })} />
+                  <InputField label="Facing" value={formData.plotFacing} onChange={e => setFormData({ ...formData, plotFacing: e.target.value })} />
+                </div>
+                <InputField label="Reference ID" value={formData.referenceId} onChange={e => setFormData({ ...formData, referenceId: e.target.value })} />
+                <InputField label="Reason / Subject" value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} placeholder="E.g., Booking Amount" />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Payment Details</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-gray-500 uppercase">Payment Mode</label>
+                    <select 
+                      value={formData.paymentMode} 
+                      onChange={e => setFormData({ ...formData, paymentMode: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none font-medium text-sm"
+                    >
+                      {['Cash', 'Cheque', 'RTGS', 'NEFT', 'Online', 'Card'].map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  <InputField label="Inst. No (Cheq/#)" value={formData.instrumentNo} onChange={e => setFormData({ ...formData, instrumentNo: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <InputField label="Inst. Date" type="date" value={formData.instrumentDate} onChange={e => setFormData({ ...formData, instrumentDate: e.target.value })} />
+                  <InputField label="Deposit Date" type="date" value={formData.depositDate} onChange={e => setFormData({ ...formData, depositDate: e.target.value })} />
+                </div>
+                <InputField label="Bank Name" value={formData.bankName} onChange={e => setFormData({ ...formData, bankName: e.target.value })} />
                 <div className="grid grid-cols-2 gap-4">
                   <InputField label="Due Date" type="date" value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} required />
                   <div className="space-y-1">
-                    <label className="text-xs font-black text-gray-500 uppercase">Status</label>
+                    <label className="text-xs font-black text-gray-500 uppercase">Receipt Status</label>
                     <select 
                       value={formData.status} 
                       onChange={e => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none font-medium"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none font-medium h-11"
                     >
-                      {['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
+                      {['Paid', 'Sent', 'Draft', 'Overdue', 'Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                 </div>
+                <InputField label="Remark" value={formData.remark} onChange={e => setFormData({ ...formData, remark: e.target.value })} />
               </div>
+            </div>
+
+            {/* Pricing Section (Before Items) */}
+            <div className="grid md:grid-cols-3 gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+               <div className="space-y-4">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Property Valuation</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputField label="Rate (Per Sq.Ft.)" type="number" value={formData.rate} onChange={e => setFormData({ ...formData, rate: Number(e.target.value) })} />
+                    <InputField label="PLC Amount" type="number" value={formData.plcAmount} onChange={e => setFormData({ ...formData, plcAmount: Number(e.target.value) })} />
+                  </div>
+                  <InputField label="Development Charges" type="number" value={formData.developmentCharge} onChange={e => setFormData({ ...formData, developmentCharge: Number(e.target.value) })} />
+               </div>
+               <div className="space-y-4">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Payment Breakup</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputField label="Curr. Paid Amt" type="number" value={formData.paidAmount} onChange={e => setFormData({ ...formData, paidAmount: Number(e.target.value) })} />
+                    <InputField label="Discount" type="number" value={formData.discount} onChange={e => setFormData({ ...formData, discount: Number(e.target.value) })} />
+                  </div>
+                  <InputField label="Total Paid (All time)" type="number" value={formData.totalPaid} onChange={e => setFormData({ ...formData, totalPaid: Number(e.target.value) })} />
+                  <InputField label="Balance Amount" type="number" value={formData.balanceAmount} readOnly className="bg-gray-100 font-black text-red-600" />
+               </div>
+               <div className="space-y-4">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Company Bank Details</h3>
+                  <InputField label="Bank Name" value={formData.bankAccountName} onChange={e => setFormData({ ...formData, bankAccountName: e.target.value })} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputField label="Account No" value={formData.bankAccountNumber} onChange={e => setFormData({ ...formData, bankAccountNumber: e.target.value })} />
+                    <InputField label="IFSC Code" value={formData.bankIFSC} onChange={e => setFormData({ ...formData, bankIFSC: e.target.value })} />
+                  </div>
+               </div>
             </div>
 
             {/* Items Table */}
