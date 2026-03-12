@@ -210,7 +210,7 @@ const LeadManagement = () => {
         </div>
         <button
           onClick={handleAddLead}
-          className="btn-primary flex items-center gap-2 px-5 py-2.5 shadow-lg shadow-red-500/20"
+          className="btn-primary w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 md:py-2.5 shadow-lg shadow-red-500/20"
         >
           <Plus className="w-5 h-5" />
           <span>Add New Lead</span>
@@ -219,12 +219,12 @@ const LeadManagement = () => {
 
       {/* Stats/Filters Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-1">
-        <div className="flex flex-wrap items-center gap-2 p-2">
+        <div className="flex overflow-x-auto custom-scrollbar items-center gap-1 p-2 whitespace-nowrap">
           {tabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shrink-0 ${
                 activeTab === tab.key
                   ? 'bg-gradient-to-r from-red-600 to-black text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -240,36 +240,38 @@ const LeadManagement = () => {
           ))}
         </div>
         
-        <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
+        <div className="p-3 md:p-4 border-t border-gray-100 flex flex-col gap-3">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by name, email, or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all text-sm"
+                className="w-full pl-10 pr-4 py-3 md:py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all text-sm"
               />
             </div>
             <div className="flex gap-2">
-              <button className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2">
+              <button className="flex-1 md:flex-none px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2">
                 <Filter className="w-4 h-4" />
                 <span>Filters</span>
               </button>
-              <ExportButton 
-                data={leads} 
-                filename="leads_data" 
-                headers={['Name', 'Phone', 'Email', 'Source', 'Status', 'Budget']}
-                className="!py-2.5"
-              />
+              <div className="flex-1 md:flex-none">
+                <ExportButton 
+                  data={leads} 
+                  filename="leads_data" 
+                  headers={['Name', 'Phone', 'Email', 'Source', 'Status', 'Budget']}
+                  className="!py-2.5 w-full"
+                />
+              </div>
             </div>
         </div>
       </div>
 
       {/* Main Table Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full min-w-[900px]">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="text-left py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Lead Details</th>

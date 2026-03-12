@@ -158,14 +158,14 @@ const AssociateProjects = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Projects</h1>
-          <p className="text-gray-600 mt-2">Manage and view your projects</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Projects</h1>
+          <p className="text-gray-600 mt-1">Manage and view your projects</p>
         </div>
         <button
           onClick={handleAddProject}
-          className="btn-primary mt-4 sm:mt-0 flex items-center space-x-2 px-4 py-3"
+          className="btn-primary flex items-center justify-center space-x-2 px-6 py-3 w-full md:w-auto shadow-lg shadow-red-200"
         >
           <Plus className="w-5 h-5" />
           <span>Add New Project</span>
@@ -174,7 +174,7 @@ const AssociateProjects = () => {
 
       {/* Tabs */}
       <div className="card">
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex overflow-x-auto pb-2 mb-6 gap-2 custom-scrollbar whitespace-nowrap">
           {[
             { key: 'all', label: `All (${projects.length})` },
             { key: 'active', label: `Active (${projects.filter(p => p.status === 'Active').length})` },
@@ -184,9 +184,9 @@ const AssociateProjects = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 shrink-0 ${
                 activeTab === tab.key
-                  ? 'bg-gradient-to-r from-red-600 to-black text-white'
+                  ? 'bg-gradient-to-r from-red-600 to-black text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >

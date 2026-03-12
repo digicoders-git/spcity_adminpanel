@@ -143,29 +143,29 @@ const AssociateProfile = () => {
         </div>
       ) : (
         <>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-              <p className="text-gray-600 mt-2">Manage your personal information and view performance</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Profile</h1>
+              <p className="text-gray-600 mt-1">Manage your personal information and view performance</p>
             </div>
             {!isEditing ? (
               <button
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 w-full md:w-auto"
                 onClick={() => setIsEditing(true)}
               >
                 <Edit className="w-4 h-4" />
                 <span>Edit Profile</span>
               </button>
             ) : (
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <button
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto"
                   onClick={handleCancel}
                 >
                   Cancel
                 </button>
                 <button
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 w-full sm:w-auto"
                   onClick={handleSave}
                 >
                   <Save className="w-4 h-4" />

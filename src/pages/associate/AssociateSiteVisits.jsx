@@ -145,27 +145,30 @@ const AssociateSiteVisits = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Site Visits</h1>
-          <p className="text-gray-600 mt-2">Manage planned and completed site visits</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Site Visits</h1>
+          <p className="text-gray-600 mt-1">Manage planned and completed site visits</p>
         </div>
         <Button
           leftIcon={<Plus className="w-4 h-4" />}
           colorScheme="red"
           onClick={handleScheduleVisit}
+          className="w-full md:w-auto py-5 md:py-3"
         >
           Schedule Visit
         </Button>
       </div>
 
       <div className="card">
-        <Tabs>
-          <TabList>
-            <Tab>All Visits ({visits.length})</Tab>
-            <Tab>Planned ({filterVisitsByStatus('Planned').length})</Tab>
-            <Tab>Completed ({filterVisitsByStatus('Completed').length})</Tab>
-          </TabList>
+        <Tabs colorScheme="red">
+          <Box overflowX="auto" whiteSpace="nowrap" className="custom-scrollbar">
+            <TabList borderBottom="1px solid" borderColor="gray.200">
+              <Tab fontWeight="bold">All Visits ({visits.length})</Tab>
+              <Tab fontWeight="bold">Planned ({filterVisitsByStatus('Planned').length})</Tab>
+              <Tab fontWeight="bold">Completed ({filterVisitsByStatus('Completed').length})</Tab>
+            </TabList>
+          </Box>
 
           <TabPanels>
             <TabPanel p={0}>
@@ -307,15 +310,15 @@ const AssociateSiteVisits = () => {
 
 const VisitTable = ({ visits, onComplete, getStatusColor }) => (
   <Box overflowX="auto">
-    <Table variant="simple">
+    <Table variant="simple" minW="800px">
       <Thead>
-        <Tr>
-          <Th>Client</Th>
-          <Th>Project</Th>
-          <Th>Date & Time</Th>
-          <Th>Status</Th>
-          <Th>Notes</Th>
-          <Th>Actions</Th>
+        <Tr bg="gray.50">
+          <Th whiteSpace="nowrap">Client</Th>
+          <Th whiteSpace="nowrap">Project</Th>
+          <Th whiteSpace="nowrap">Date & Time</Th>
+          <Th whiteSpace="nowrap">Status</Th>
+          <Th whiteSpace="nowrap">Notes</Th>
+          <Th whiteSpace="nowrap" textAlign="right">Actions</Th>
         </Tr>
       </Thead>
       <Tbody>

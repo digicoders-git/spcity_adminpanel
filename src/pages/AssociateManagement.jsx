@@ -286,24 +286,23 @@ const AssociateManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Associate Management</h1>
-          <p className="text-gray-600 mt-2">Manage and track all your associates</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Associate Management</h1>
+          <p className="text-gray-600 mt-1">Manage and track all your associates</p>
         </div>
         <button
           onClick={handleAddAssociate}
-          className="btn-primary mt-4 sm:mt-0 flex items-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base"
+          className="btn-primary flex items-center justify-center space-x-2 px-6 py-3 w-full md:w-auto shadow-lg shadow-red-200"
         >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="hidden sm:inline">Add New Associate</span>
-          <span className="sm:hidden">Add Associate</span>
+          <Plus className="w-5 h-5" />
+          <span>Add New Associate</span>
         </button>
       </div>
 
       <div className="card">
         {/* Search and Export */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -314,27 +313,29 @@ const AssociateManagement = () => {
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
             />
           </div>
-          <ExportButton 
-            data={filteredAssociates} 
-            filename="associates"
-            headers={['Name', 'Phone', 'Email', 'Role', 'Department', 'Status', 'Date']}
-          />
+          <div className="w-full md:w-auto">
+            <ExportButton 
+              data={filteredAssociates} 
+              filename="associates"
+              headers={['Name', 'Phone', 'Email', 'Role', 'Department', 'Status', 'Date']}
+            />
+          </div>
         </div>
 
         {/* Associates Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full min-w-[1200px]">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-4 px-2 font-semibold text-gray-900">Associate Details</th>
-                <th className="text-left py-4 px-2 font-semibold text-gray-900">Contact</th>
-                <th className="text-left py-4 px-2 font-semibold text-gray-900">Role</th>
-                <th className="text-left py-4 px-2 font-semibold text-gray-900">Department</th>
-                <th className="text-left py-4 px-2 font-semibold text-gray-900">Status</th>
-                <th className="text-left py-4 px-2 font-semibold text-gray-900">Sponsor</th>
-                <th className="text-left py-4 px-2 font-semibold text-gray-900">Level</th>
-                <th className="text-left py-4 px-2 font-semibold text-gray-900">Date</th>
-                <th className="text-left py-4 px-2 font-semibold text-gray-900">Actions</th>
+              <tr className="border-b border-gray-200 bg-gray-50/50">
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Associate Details</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Contact</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Role</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Department</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Status</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Sponsor</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Level</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Date</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody>

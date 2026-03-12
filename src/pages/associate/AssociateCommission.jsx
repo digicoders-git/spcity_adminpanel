@@ -162,14 +162,14 @@ const AssociateCommission = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Commission Management</h1>
-          <p className="text-gray-600 mt-2">Track your earnings and manage withdrawals</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Commission Management</h1>
+          <p className="text-gray-600 mt-1">Track your earnings and manage withdrawals</p>
         </div>
         <Button
           leftIcon={<Download className="w-4 h-4" />}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-5 md:py-3 rounded-lg font-semibold transition-colors w-full md:w-auto"
           onClick={handleWithdraw}
           isDisabled={stats.availableBalance <= 0}
         >
@@ -241,10 +241,12 @@ const AssociateCommission = () => {
 
       <div className="card">
         <Tabs index={tabIndex} onChange={(index) => setTabIndex(index)} colorScheme="red">
-          <TabList>
-            <Tab>Commission History ({commissions.length})</Tab>
-            <Tab>Withdrawal History ({withdrawals.length})</Tab>
-          </TabList>
+          <Box overflowX="auto" whiteSpace="nowrap" className="custom-scrollbar">
+            <TabList borderBottom="1px solid" borderColor="gray.200">
+              <Tab fontWeight="bold">Commission History ({commissions.length})</Tab>
+              <Tab fontWeight="bold">Withdrawal History ({withdrawals.length})</Tab>
+            </TabList>
+          </Box>
 
           <TabPanels>
             <TabPanel p={0}>

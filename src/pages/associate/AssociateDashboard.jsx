@@ -309,14 +309,14 @@ const AssociateDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Associate Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome back! Here's your performance overview.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Associate Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back! Here's your performance overview.</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Today's Date</p>
-          <p className="text-lg font-semibold text-gray-900">{new Date().toLocaleDateString()}</p>
+        <div className="text-left md:text-right bg-red-50 p-3 sm:p-0 sm:bg-transparent rounded-lg w-full md:w-auto">
+          <p className="text-xs sm:text-sm text-gray-500 font-medium italic">Today's Date</p>
+          <p className="text-lg font-bold text-red-600">{new Date().toLocaleDateString()}</p>
         </div>
       </div>
 

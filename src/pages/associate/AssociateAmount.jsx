@@ -185,15 +185,15 @@ const AssociateAmount = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Amount Management</h1>
-          <p className="text-gray-600 mt-2">Track payments, advances, and EMIs</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Amount Management</h1>
+          <p className="text-gray-600 mt-1">Track payments, advances, and EMIs</p>
         </div>
         <Button
           leftIcon={<Plus className="w-4 h-4" />}
           colorScheme=""
-          className='bg-gradient-to-r from-red-600 to-black text-white'
+          className='bg-gradient-to-r from-red-600 to-black text-white w-full md:w-auto py-5 md:py-3'
           onClick={handleAddPayment}
         >
           Add Payment
@@ -242,12 +242,14 @@ const AssociateAmount = () => {
 
       <div className="card">
         <Tabs index={tabIndex} onChange={(index) => setTabIndex(index)} colorScheme="red">
-          <TabList>
-            <Tab>All Payments ({payments.length})</Tab>
-            <Tab>Received ({filterPaymentsByType('received').length})</Tab>
-            <Tab>Pending ({filterPaymentsByType('pending').length})</Tab>
-            <Tab>Booking ({filterPaymentsByType('booking').length})</Tab>
-          </TabList>
+          <Box overflowX="auto" whiteSpace="nowrap" className="custom-scrollbar">
+            <TabList borderBottom="1px solid" borderColor="gray.200">
+              <Tab fontWeight="bold">All Payments ({payments.length})</Tab>
+              <Tab fontWeight="bold">Received ({filterPaymentsByType('received').length})</Tab>
+              <Tab fontWeight="bold">Pending ({filterPaymentsByType('pending').length})</Tab>
+              <Tab fontWeight="bold">Booking ({filterPaymentsByType('booking').length})</Tab>
+            </TabList>
+          </Box>
 
           <TabPanels>
             <TabPanel p={0}>
@@ -400,17 +402,17 @@ const AssociateAmount = () => {
 };
 
 const PaymentTable = ({ payments, formatCurrency, getStatusColor }) => (
-  <Box overflowX="auto">
-    <Table variant="simple">
+  <Box overflowX="auto" className="custom-scrollbar">
+    <Table variant="simple" minW="800px">
       <Thead>
         <Tr>
-          <Th>Customer</Th>
-          <Th>Project</Th>
-          <Th>Amount</Th>
-          <Th>Payment Type</Th>
-          <Th>Payment Method</Th>
-          <Th>Due Date</Th>
-          <Th>Status</Th>
+          <Th whiteSpace="nowrap">Customer</Th>
+          <Th whiteSpace="nowrap">Project</Th>
+          <Th whiteSpace="nowrap">Amount</Th>
+          <Th whiteSpace="nowrap">Payment Type</Th>
+          <Th whiteSpace="nowrap">Payment Method</Th>
+          <Th whiteSpace="nowrap">Due Date</Th>
+          <Th whiteSpace="nowrap">Status</Th>
         </Tr>
       </Thead>
       <Tbody>

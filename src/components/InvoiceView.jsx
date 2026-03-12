@@ -30,8 +30,22 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
   };
 
   return (
-    <div ref={ref} className="bg-white p-6 md:p-10 max-w-[800px] mx-auto text-[12px] leading-snug text-gray-800 font-sans border border-gray-100 print:border-none" id="invoice-print">
+    <div ref={ref} className="bg-white p-4 md:p-10 max-w-[800px] mx-auto text-[11px] sm:text-[12px] leading-snug text-gray-800 font-sans border border-gray-100 print:border-none w-full" id="invoice-print">
       <style dangerouslySetInnerHTML={{ __html: `
+        @media screen and (max-width: 640px) {
+          #invoice-print { padding: 12px !important; }
+          .receipt-table { flex-direction: column !important; gap: 15px !important; }
+          .receipt-table > div { width: 100% !important; padding-top: 5px !important; }
+          .header-flex { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 12px !important; }
+          .header-flex > div { text-align: center !important; }
+          .header-flex img { height: 60px !important; }
+          .info-block { flex-direction: column !important; gap: 15px !important; }
+          .info-block > div { width: 100% !important; }
+          .label-value-row { flex-direction: column !important; align-items: flex-start !important; gap: 2px !important; }
+          .label-value-row > span:first-child { width: auto !important; }
+          .label-value-row > span:last-child { width: 100% !important; text-align: left !important; }
+          .print-receipt-bar { font-size: 14px !important; padding: 8px !important; }
+        }
         @media print {
           @page {
             size: A4;
@@ -53,7 +67,7 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
       `}} />
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 header-flex">
         <div className="flex items-center gap-4">
           <img 
             src="/SP City Logo PNG.png" 
@@ -71,7 +85,7 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
       </div>
 
       {/* Title Bar */}
-      <div className="bg-black text-white text-center py-1 font-bold text-lg mb-4 tracking-widest uppercase">
+      <div className="bg-black text-white text-center py-1 font-bold text-lg mb-4 tracking-widest uppercase print-receipt-bar">
         Print Receipt
       </div>
 
@@ -81,32 +95,36 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
       </div>
 
       {/* Customer Info Section */}
-      <div className="space-y-2 mb-6">
-        <div className="flex justify-between items-start gap-12">
+      <div className="space-y-4 mb-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-6 lg:gap-12">
           <div className="flex-1 space-y-2">
             <p className="font-bold">To,</p>
-            <div className="flex items-start">
-              <span className="w-24 shrink-0 font-bold text-gray-600">Mr./Mrs. :</span>
-              <span className="font-bold border-b border-gray-400 flex-1 uppercase">{invoice.customerName}</span>
-              <span className="mx-2 font-bold text-gray-600">S/O</span>
-              <span className="font-bold border-b border-gray-400 flex-1 uppercase">{invoice.fatherName || '---'}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center flex-1">
+                <span className="w-24 shrink-0 font-bold text-gray-600">Mr./Mrs. :</span>
+                <span className="font-bold border-b border-gray-400 flex-1 uppercase truncate">{invoice.customerName}</span>
+              </div>
+              <div className="flex items-center flex-1">
+                <span className="sm:mx-2 font-bold text-gray-600">S/O</span>
+                <span className="font-bold border-b border-gray-400 flex-1 uppercase truncate">{invoice.fatherName || '---'}</span>
+              </div>
             </div>
-            <div className="flex items-start">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center">
                <span className="w-24 shrink-0 font-bold text-gray-600">Address :</span>
-               <span className="font-bold border-b border-gray-400 flex-1 capitalize">{invoice.customerAddress || '---'}</span>
+               <span className="font-bold border-b border-gray-400 flex-1 capitalize w-full sm:w-auto">{invoice.customerAddress || '---'}</span>
             </div>
           </div>
           
-          <div className="w-64 space-y-2">
-             <div className="flex">
+          <div className="w-full lg:w-64 space-y-2">
+             <div className="flex label-value-row">
                 <span className="w-32 shrink-0 font-bold text-gray-600">Serial No :</span>
                 <span className="font-bold uppercase">{invoice.invoiceNumber}</span>
              </div>
-             <div className="flex">
+             <div className="flex label-value-row">
                 <span className="w-32 shrink-0 font-bold text-gray-600">Reference Id :</span>
                 <span className="font-bold uppercase">{invoice.referenceId || '---'}</span>
              </div>
-             <div className="flex">
+             <div className="flex label-value-row">
                 <span className="w-32 shrink-0 font-bold text-gray-600">Update By Id :</span>
                 <span className="font-bold uppercase">{invoice.createdBy?.name || 'ADMIN'}</span>
              </div>
@@ -223,9 +241,9 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
       </div>
 
       {/* Account Details Table */}
-      <div className="mb-6">
+      <div className="mb-6 overflow-x-auto">
         <p className="font-bold mb-1 uppercase tracking-tight">Account Details</p>
-        <table className="w-full border-collapse border border-black receipt-border text-center">
+        <table className="w-full border-collapse border border-black receipt-border text-center min-w-[500px]">
            <tbody>
               <tr>
                  <td className="border border-black p-2 font-black w-1/4 bg-gray-50 uppercase text-[11px]">Bank Name</td>

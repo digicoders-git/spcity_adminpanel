@@ -289,25 +289,24 @@ const ProjectManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Project Management</h1>
-          <p className="text-gray-600 mt-2">Manage all your real estate projects</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Project Management</h1>
+          <p className="text-gray-600 mt-1">Manage all your real estate projects</p>
         </div>
         <button
           onClick={handleAddProject}
-          className="btn-primary mt-4 sm:mt-0 flex items-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base"
+          className="btn-primary w-full md:w-auto flex items-center justify-center space-x-2 px-5 py-3 shadow-lg shadow-red-200"
         >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="hidden sm:inline">Add Project</span>
-          <span className="sm:hidden">Add</span>
+          <Plus className="w-5 h-5" />
+          <span>Add Project</span>
         </button>
       </div>
 
       <div className="card">
         {/* Search and View Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col gap-3 mb-6">
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
@@ -319,15 +318,17 @@ const ProjectManagement = () => {
           </div>
           
           <div className="flex gap-2">
-            <ExportButton 
-              data={filteredProjects} 
-              filename="projects" 
-              headers={['Name', 'Location', 'Type', 'Total Units', 'Sold Units', 'Price Range', 'Status', 'Start Date', 'End Date']}
-            />
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+            <div className="flex-1 md:flex-none">
+              <ExportButton 
+                data={filteredProjects} 
+                filename="projects" 
+                headers={['Name', 'Location', 'Type', 'Total Units', 'Sold Units', 'Price Range', 'Status', 'Start Date', 'End Date']}
+              />
+            </div>
+            <div className="flex border border-gray-300 rounded-lg overflow-hidden shrink-0">
               <button
                 onClick={() => setViewMode('cards')}
-                className={`px-3 py-2 flex items-center space-x-2 text-sm ${
+                className={`px-3 py-2 flex items-center space-x-1.5 text-sm whitespace-nowrap ${
                   viewMode === 'cards' 
                     ? 'bg-gradient-to-r from-red-600 to-black text-white' 
                     : 'bg-white text-gray-600 hover:bg-gray-50'
@@ -338,7 +339,7 @@ const ProjectManagement = () => {
               </button>
               <button
                 onClick={() => setViewMode('table')}
-                className={`px-3 py-2 flex items-center space-x-2 text-sm border-l border-gray-300 ${
+                className={`px-3 py-2 flex items-center space-x-1.5 text-sm border-l border-gray-300 whitespace-nowrap ${
                   viewMode === 'table' 
                     ? 'bg-gradient-to-r from-red-600 to-black text-white' 
                     : 'bg-white text-gray-600 hover:bg-gray-50'
@@ -474,8 +475,8 @@ const ProjectManagement = () => {
 
         {/* Projects Table View */}
         {viewMode === 'table' && (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-4 px-2 font-semibold text-gray-900">Project</th>
@@ -818,8 +819,8 @@ const ProjectManagement = () => {
 
               <div className="space-y-6">
                 {/* Project Header */}
-                <div className="flex items-start space-x-6">
-                  <div className="w-32 h-32 bg-purple-500 rounded-xl overflow-hidden flex-shrink-0">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 bg-purple-500 rounded-xl overflow-hidden flex-shrink-0">
                     {viewProject.image ? (
                       <img 
                         src={viewProject.image} 
@@ -828,21 +829,21 @@ const ProjectManagement = () => {
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <Building className="w-16 h-16 text-white" />
+                        <Building className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
                       </div>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{viewProject.name}</h3>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <MapPin className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-600">{viewProject.location}</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 break-words">{viewProject.name}</h3>
+                    <div className="flex items-start gap-2 mb-3">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <span className="text-gray-600 text-sm break-words">{viewProject.location}</span>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {viewProject.type}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(viewProject.status)}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(viewProject.status)}`}>
                         {viewProject.status}
                       </span>
                     </div>
@@ -850,24 +851,24 @@ const ProjectManagement = () => {
                 </div>
 
                 {/* Project Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-blue-50 p-4 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-blue-600">{viewProject.totalUnits}</p>
-                    <p className="text-sm text-gray-600">Total Units</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                  <div className="bg-blue-50 p-3 md:p-4 rounded-xl text-center">
+                    <p className="text-xl md:text-2xl font-bold text-blue-600">{viewProject.totalUnits}</p>
+                    <p className="text-xs md:text-sm text-gray-600">Total Units</p>
                   </div>
-                  <div className="bg-green-50 p-4 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-green-600">{viewProject.soldUnits}</p>
-                    <p className="text-sm text-gray-600">Units Sold</p>
+                  <div className="bg-green-50 p-3 md:p-4 rounded-xl text-center">
+                    <p className="text-xl md:text-2xl font-bold text-green-600">{viewProject.soldUnits}</p>
+                    <p className="text-xs md:text-sm text-gray-600">Units Sold</p>
                   </div>
-                  <div className="bg-purple-50 p-4 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-purple-600">{viewProject.leads}</p>
-                    <p className="text-sm text-gray-600">Active Leads</p>
+                  <div className="bg-purple-50 p-3 md:p-4 rounded-xl text-center">
+                    <p className="text-xl md:text-2xl font-bold text-purple-600">{viewProject.leads}</p>
+                    <p className="text-xs md:text-sm text-gray-600">Active Leads</p>
                   </div>
-                  <div className="bg-orange-50 p-4 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-orange-600">
+                  <div className="bg-orange-50 p-3 md:p-4 rounded-xl text-center">
+                    <p className="text-xl md:text-2xl font-bold text-orange-600">
                       {((viewProject.soldUnits / viewProject.totalUnits) * 100).toFixed(1)}%
                     </p>
-                    <p className="text-sm text-gray-600">Sold</p>
+                    <p className="text-xs md:text-sm text-gray-600">Sold</p>
                   </div>
                 </div>
 
