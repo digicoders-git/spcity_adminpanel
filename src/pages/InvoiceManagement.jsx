@@ -748,13 +748,13 @@ const StatCard = ({ title, value, icon: Icon, color }) => {
   };
 
   return (
-    <div className="bg-white p-3 md:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 group hover:shadow-md transition-all overflow-hidden">
-      <div className={`p-2.5 md:p-4 rounded-xl bg-gray-50 group-hover:bg-red-50 transition-colors shrink-0`}>
-        <Icon className={`w-5 h-5 md:w-8 md:h-8 ${colors[color].split(' ')[2]}`} strokeWidth={2.5} />
+    <div className="bg-white p-3 md:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-start gap-2 group hover:shadow-md transition-all overflow-hidden">
+      <div className={`p-2.5 md:p-3 rounded-xl bg-gray-50 group-hover:bg-red-50 transition-colors shrink-0`}>
+        <Icon className={`w-5 h-5 md:w-6 md:h-6 ${colors[color].split(' ')[2]}`} strokeWidth={2.5} />
       </div>
-      <div className="min-w-0 w-full">
-        <p className="text-gray-400 font-bold text-[10px] md:text-xs uppercase tracking-wider truncate">{title}</p>
-        <p className="text-lg md:text-2xl font-black text-gray-900 truncate">{value}</p>
+      <div className="w-full">
+        <p className="text-gray-400 font-bold text-[10px] uppercase tracking-wider mb-0.5">{title}</p>
+        <p className="text-sm md:text-base font-black text-gray-900 break-all leading-tight">{value}</p>
       </div>
     </div>
   );
