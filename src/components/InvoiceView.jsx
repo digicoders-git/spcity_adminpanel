@@ -49,7 +49,7 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
         @media print {
           @page {
             size: A4;
-            margin: 10mm;
+            margin: 6mm 8mm;
           }
           body { -webkit-print-color-adjust: exact; margin: 0; padding: 0; }
           #invoice-print { 
@@ -58,8 +58,23 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
             width: 100% !important; 
             max-width: none !important;
             box-shadow: none !important;
+            font-size: 10px !important;
+            line-height: 1.3 !important;
           }
           .no-print { display: none !important; }
+          .print-logo { height: 56px !important; }
+          .print-header-title { font-size: 18px !important; }
+          .print-company-name { font-size: 16px !important; }
+          .print-section-mb { margin-bottom: 6px !important; }
+          .print-data-grid { margin-bottom: 6px !important; }
+          .print-data-row { margin-bottom: 2px !important; padding-bottom: 2px !important; }
+          .print-account-table td { padding: 2px 4px !important; font-size: 10px !important; }
+          .print-notes { margin-bottom: 6px !important; }
+          .print-signatory { padding-top: 6px !important; }
+          .print-receipt-bar { padding: 2px 0 !important; font-size: 13px !important; margin-bottom: 4px !important; }
+          .print-date-row { margin-bottom: 4px !important; padding-bottom: 2px !important; }
+          .print-greeting { margin-bottom: 6px !important; line-height: 1.3 !important; }
+          * { page-break-inside: avoid; }
         }
         .receipt-table td { padding: 4px 0; }
         .receipt-border { border: 1px solid #000; }
@@ -72,30 +87,30 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
           <img 
             src="/SP City Logo PNG.png" 
             alt="Logo" 
-            className="h-20 w-auto object-contain"
+            className="h-16 w-auto object-contain print-logo"
           />
           <div>
-            <h1 className="text-2xl font-black text-blue-900 tracking-tight leading-none">Shivapuram City</h1>
+            <h1 className="text-xl font-black text-blue-900 tracking-tight leading-none print-header-title">Shivapuram City</h1>
           </div>
         </div>
         <div className="text-right">
-          <h1 className="text-2xl font-black text-black">SHIVAPURAM INFRA DEVELOPERS</h1>
+          <h1 className="text-xl font-black text-black print-company-name">SHIVAPURAM INFRA DEVELOPERS</h1>
           <p className="font-bold text-gray-700">Shivapuram city Prayagraj Uttar Pradesh</p>
         </div>
       </div>
 
       {/* Title Bar */}
-      <div className="bg-black text-white text-center py-1 font-bold text-lg mb-4 tracking-widest uppercase print-receipt-bar">
+      <div className="bg-black text-white text-center py-1 font-bold text-base mb-3 tracking-widest uppercase print-receipt-bar">
         Print Receipt
       </div>
 
       {/* Date Row */}
-      <div className="text-right font-bold border-b border-gray-300 pb-1 mb-4">
+      <div className="text-right font-bold border-b border-gray-300 pb-1 mb-3 print-date-row">
         {formatDate(invoice.issueDate || invoice.createdAt)}
       </div>
 
       {/* Customer Info Section */}
-      <div className="space-y-4 mb-6">
+      <div className="space-y-3 mb-4 print-section-mb">
         <div className="flex flex-col lg:flex-row justify-between items-start gap-6 lg:gap-12">
           <div className="flex-1 space-y-2">
             <p className="font-bold">To,</p>
@@ -137,7 +152,7 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
       </div>
 
       {/* Greeting Message */}
-      <div className="mb-6 leading-relaxed">
+      <div className="mb-4 leading-snug print-greeting">
         <p className="font-bold mb-1">Dear Sir/Madam,</p>
         <p>
           We congratulate you on being the proud owner of a Plot in our project " <span className="font-bold text-black uppercase">{invoice.project?.name}</span> ". 
@@ -146,7 +161,7 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
       </div>
 
       {/* Dynamic Data Grid */}
-      <div className="flex flex-row gap-x-10 mb-6 items-start receipt-table">
+      <div className="flex flex-row gap-x-10 mb-4 items-start receipt-table print-data-grid">
         {/* Left Column */}
         <div className="w-[48%] space-y-1.5 pt-4">
           <div className="flex justify-between border-b border-gray-200">
@@ -241,7 +256,7 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
       </div>
 
       {/* Account Details Table */}
-      <div className="mb-6 overflow-x-auto">
+      <div className="mb-4 overflow-x-auto">
         <p className="font-bold mb-1 uppercase tracking-tight">Account Details</p>
         <table className="w-full border-collapse border border-black receipt-border text-center min-w-[500px]">
            <tbody>
@@ -262,7 +277,7 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
       </div>
 
       {/* Notes Section */}
-      <div className="text-[11px] space-y-1 mb-10 text-gray-700">
+      <div className="text-[10.5px] space-y-0.5 mb-3 text-gray-700 print-notes">
         <p className="font-black text-black">NOTE-</p>
         <p className="font-black text-black uppercase">Booking Non Refundable</p>
         <p>1- Above mentioned rate is applicable for 60 days only from the date of booking.</p>
@@ -271,7 +286,7 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
       </div>
 
       {/* Footer / Signatory */}
-      <div className="flex justify-end pt-8">
+      <div className="flex justify-end pt-4 print-signatory">
         <div className="text-center w-64">
            <p className="font-bold text-black">( Authority Signatory )</p>
            <p className="text-xs text-gray-500 mt-1">Shivapuram City Real Estate</p>
