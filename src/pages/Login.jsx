@@ -87,7 +87,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-[0_0_15px_rgba(220,38,38,0.15)] p-6 sm:p-8 border-2 border-red-500">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <img 
