@@ -14,9 +14,7 @@ const getFileUrl = (path) => {
 };
 
 const AssociateProfile = () => {
-  const { user } = useAuth(); // Keeping for context if needed elsewhere, otherwise would remove
-  const panInputRef = useRef(null);
-  const aadhaarInputRef = useRef(null);
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   
@@ -569,31 +567,33 @@ const AssociateProfile = () => {
                   )}
                 </div>
                 {isEditing ? (
-                  <div className="relative">
-                    {/* Native Hidden Input - Not display:none for better mobile accessibility */}
+                  <div className="relative h-48 w-full group overflow-hidden bg-white border-2 border-dashed border-gray-300 rounded-2xl hover:border-red-500 transition-colors">
+                    {/* 
+                      THE FIX: Transparent Input Overlay 
+                      We use a real input stretched over the entire area. 
+                      User's thumb physically touches the input, so the browser 
+                      ALWAYS triggers the file picker. No JS triggers used.
+                    */}
                     <input
-                      ref={panInputRef}
                       type="file"
                       name="panCard"
                       onChange={handleFileChange}
-                      className="sr-only"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
                       id="panCardUpload"
-                      accept="image/jpeg,image/png,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                      style={{ fontSize: '16px' }} // Prevents iOS auto-zoom
                     />
-                    {/* Native Button Trigger - Essential for Mobile Tap Reliability */}
-                    <button 
-                      type="button"
-                      onClick={() => panInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-2xl bg-white hover:border-red-500 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all active:scale-[0.98] active:bg-gray-50 touch-manipulation"
-                    >
-                      <div className="p-3 bg-red-50 rounded-full mb-3 pointer-events-none">
-                        <Upload className="w-8 h-8 text-red-500" />
+                    
+                    {/* Visual UI (Underneath the transparent input) */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4">
+                      <div className="p-4 bg-red-50 rounded-full mb-3">
+                        <Upload className="w-10 h-10 text-red-500" />
                       </div>
-                      <span className="text-base font-bold text-gray-900 mb-1 pointer-events-none">
+                      <span className="text-lg font-bold text-gray-900 mb-1">
                         {files.panCard ? files.panCard.name : 'Tap to select PAN Card'}
                       </span>
-                      <p className="text-xs text-gray-500 pointer-events-none">JPG, PNG, PDF, DOC (Max 10MB)</p>
-                    </button>
+                      <p className="text-sm text-gray-500 text-center">JPG, PNG, PDF, or Word files</p>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
@@ -629,31 +629,26 @@ const AssociateProfile = () => {
                   )}
                 </div>
                 {isEditing ? (
-                  <div className="relative">
-                    {/* Native Hidden Input */}
+                  <div className="relative h-48 w-full group overflow-hidden bg-white border-2 border-dashed border-gray-300 rounded-2xl hover:border-red-500 transition-colors">
                     <input
-                      ref={aadhaarInputRef}
                       type="file"
                       name="aadhaarCard"
                       onChange={handleFileChange}
-                      className="sr-only"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
                       id="aadhaarCardUpload"
-                      accept="image/jpeg,image/png,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                      style={{ fontSize: '16px' }}
                     />
-                    {/* Native Button Trigger */}
-                    <button 
-                      type="button"
-                      onClick={() => aadhaarInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-2xl bg-white hover:border-red-500 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all active:scale-[0.98] active:bg-gray-50 touch-manipulation"
-                    >
-                      <div className="p-3 bg-blue-50 rounded-full mb-3 pointer-events-none">
-                        <Upload className="w-8 h-8 text-blue-500" />
+                    
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4">
+                      <div className="p-4 bg-blue-50 rounded-full mb-3">
+                        <Upload className="w-10 h-10 text-blue-500" />
                       </div>
-                      <span className="text-base font-bold text-gray-900 mb-1 pointer-events-none">
+                      <span className="text-lg font-bold text-gray-900 mb-1">
                         {files.aadhaarCard ? files.aadhaarCard.name : 'Tap to select Aadhaar Card'}
                       </span>
-                      <p className="text-xs text-gray-500 pointer-events-none">JPG, PNG, PDF, DOC (Max 10MB)</p>
-                    </button>
+                      <p className="text-sm text-gray-500 text-center">JPG, PNG, PDF, or Word files</p>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
