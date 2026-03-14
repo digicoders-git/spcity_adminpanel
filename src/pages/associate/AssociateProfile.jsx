@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { User, Phone, Mail, MapPin, Calendar, Edit, Save, Camera, Award, TrendingUp } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Calendar, Edit, Save, Camera, Award, TrendingUp, CreditCard, FileText, Upload, Download, ExternalLink, X, Building, Users, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { associatesAPI, commissionsAPI, dashboardAPI } from '../../utils/api';
 import { toast } from 'react-toastify';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://spcity-backend.onrender.com/api';
+const BACKEND_URL = API_BASE_URL.replace('/api', '');
+
+const getFileUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${BACKEND_URL}/${path.replace(/\\/g, '/')}`;
+};
 
 const AssociateProfile = () => {
   const { user } = useAuth();
@@ -20,9 +29,26 @@ const AssociateProfile = () => {
     permissions: [],
     status: '',
     createdAt: '',
-    bankAccount: '',
+    bio: '',
+    bankAccount: '', // Legacy support
+    bankDetails: {
+      accountHolderName: '',
+      accountNumber: '',
+      bankName: '',
+      ifscCode: '',
+      branchName: ''
+    },
     panNumber: '',
-    aadharNumber: ''
+    aadhaarNumber: '',
+    documents: {
+      panCard: '',
+      aadhaarCard: ''
+    }
+  });
+
+  const [files, setFiles] = useState({
+    panCard: null,
+    aadhaarCard: null
   });
 
   const [stats, setStats] = useState({
@@ -54,9 +80,21 @@ const AssociateProfile = () => {
           permissions: response.data.permissions || [],
           status: response.data.status || '',
           createdAt: response.data.createdAt || '',
+          bio: response.data.bio || '',
           bankAccount: response.data.bankAccount || '',
+          bankDetails: response.data.bankDetails || {
+            accountHolderName: response.data.name || '',
+            accountNumber: response.data.bankAccount || '',
+            bankName: '',
+            ifscCode: '',
+            branchName: ''
+          },
           panNumber: response.data.panNumber || '',
-          aadharNumber: response.data.aadharNumber || ''
+          aadhaarNumber: response.data.aadhaarNumber || '',
+          documents: response.data.documents || {
+            panCard: '',
+            aadhaarCard: ''
+          }
         });
       }
     } catch (error) {
@@ -95,6 +133,35 @@ const AssociateProfile = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setProfileData({
+        ...profileData,
+        [parent]: {
+          ...profileData[parent],
+          [child]: value
+        }
+      });
+    } else {
+      setProfileData({
+        ...profileData,
+        [name]: value
+      });
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const { name, files: selectedFiles } = e.target;
+    if (selectedFiles && selectedFiles[0]) {
+      setFiles({
+        ...files,
+        [name]: selectedFiles[0]
+      });
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -105,30 +172,40 @@ const AssociateProfile = () => {
 
   const handleSave = async () => {
     try {
-      const updateData = {
-        name: profileData.name,
-        phone: profileData.phone,
-        address: profileData.address,
-        bankAccount: profileData.bankAccount,
-        panNumber: profileData.panNumber,
-        aadharNumber: profileData.aadharNumber
-      };
+      const formData = new FormData();
+      formData.append('name', profileData.name);
+      formData.append('phone', profileData.phone);
+      formData.append('address', profileData.address);
+      formData.append('bio', profileData.bio);
+      formData.append('panNumber', profileData.panNumber);
+      formData.append('aadhaarNumber', profileData.aadhaarNumber);
+      formData.append('bankDetails', JSON.stringify(profileData.bankDetails));
+
+      if (files.panCard) {
+        formData.append('panCard', files.panCard);
+      }
+      if (files.aadhaarCard) {
+        formData.append('aadhaarCard', files.aadhaarCard);
+      }
       
-      const response = await associatesAPI.updateProfile(updateData);
+      const response = await associatesAPI.updateProfile(formData);
       
       if (response.success) {
         setIsEditing(false);
         toast.success('Profile updated successfully!');
+        setFiles({ panCard: null, aadhaarCard: null });
         fetchProfile();
       }
     } catch (error) {
       toast.error('Failed to update profile');
+      console.error('Error updating profile:', error);
     }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    fetchProfile(); // Reset form data
+    setFiles({ panCard: null, aadhaarCard: null });
+    fetchProfile(); 
   };
 
   const getStatusColor = (status) => {
@@ -284,8 +361,9 @@ const AssociateProfile = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                     <input
                       type="text"
+                      name="name"
                       value={profileData.name}
-                      onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                      onChange={handleInputChange}
                       readOnly={!isEditing}
                       className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         isEditing ? 'bg-white' : 'bg-gray-50'
@@ -305,8 +383,9 @@ const AssociateProfile = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                     <input
                       type="text"
+                      name="phone"
                       value={profileData.phone}
-                      onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                      onChange={handleInputChange}
                       readOnly={!isEditing}
                       className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         isEditing ? 'bg-white' : 'bg-gray-50'
@@ -326,10 +405,24 @@ const AssociateProfile = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
                   <textarea
+                    name="address"
                     value={profileData.address}
-                    onChange={(e) => setProfileData({...profileData, address: e.target.value})}
+                    onChange={handleInputChange}
                     readOnly={!isEditing}
                     rows={3}
+                    className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isEditing ? 'bg-white' : 'bg-gray-50'
+                    }`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                  <textarea
+                    name="bio"
+                    value={profileData.bio}
+                    onChange={handleInputChange}
+                    readOnly={!isEditing}
+                    rows={2}
                     className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isEditing ? 'bg-white' : 'bg-gray-50'
                     }`}
@@ -341,46 +434,224 @@ const AssociateProfile = () => {
 
           {/* Financial Information */}
           <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bank Account Number</label>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <CreditCard className="w-5 h-5 mr-2 text-red-600" />
+              Financial Information
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Account Holder Name</label>
                 <input
-                  type={isEditing ? 'text' : 'password'}
-                  value={profileData.bankAccount}
-                  onChange={(e) => setProfileData({...profileData, bankAccount: e.target.value})}
+                  type="text"
+                  name="bankDetails.accountHolderName"
+                  value={profileData.bankDetails.accountHolderName}
+                  onChange={handleInputChange}
                   readOnly={!isEditing}
-                  placeholder="Enter bank account number"
                   className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isEditing ? 'bg-white' : 'bg-gray-50'
                   }`}
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Account Number</label>
+                <input
+                  type="text"
+                  name="bankDetails.accountNumber"
+                  value={profileData.bankDetails.accountNumber}
+                  onChange={handleInputChange}
+                  readOnly={!isEditing}
+                  className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono ${
+                    isEditing ? 'bg-white' : 'bg-gray-50'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bank Name</label>
+                <input
+                  type="text"
+                  name="bankDetails.bankName"
+                  value={profileData.bankDetails.bankName}
+                  onChange={handleInputChange}
+                  readOnly={!isEditing}
+                  className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isEditing ? 'bg-white' : 'bg-gray-50'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">IFSC Code</label>
+                <input
+                  type="text"
+                  name="bankDetails.ifscCode"
+                  value={profileData.bankDetails.ifscCode}
+                  onChange={handleInputChange}
+                  readOnly={!isEditing}
+                  className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase font-mono ${
+                    isEditing ? 'bg-white' : 'bg-gray-50'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Branch Name</label>
+                <input
+                  type="text"
+                  name="bankDetails.branchName"
+                  value={profileData.bankDetails.branchName}
+                  onChange={handleInputChange}
+                  readOnly={!isEditing}
+                  className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isEditing ? 'bg-white' : 'bg-gray-50'
+                  }`}
+                />
+              </div>
+
+              <div className="border-t md:col-span-2 pt-4 mt-2"></div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">PAN Number</label>
                 <input
                   type="text"
+                  name="panNumber"
                   value={profileData.panNumber}
-                  onChange={(e) => setProfileData({...profileData, panNumber: e.target.value.toUpperCase()})}
+                  onChange={handleInputChange}
                   readOnly={!isEditing}
-                  placeholder="Enter PAN number"
-                  className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase font-bold font-mono ${
                     isEditing ? 'bg-white' : 'bg-gray-50'
                   }`}
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Aadhar Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Aadhaar Number</label>
                 <input
-                  type={isEditing ? 'text' : 'password'}
-                  value={profileData.aadharNumber}
-                  onChange={(e) => setProfileData({...profileData, aadharNumber: e.target.value})}
+                  type="text"
+                  name="aadhaarNumber"
+                  value={profileData.aadhaarNumber}
+                  onChange={handleInputChange}
                   readOnly={!isEditing}
-                  placeholder="Enter Aadhar number"
-                  className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold font-mono ${
                     isEditing ? 'bg-white' : 'bg-gray-50'
                   }`}
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Documents */}
+          <div className="card">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <FileText className="w-5 h-5 mr-2 text-red-600" />
+              Identity Documents
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* PAN Card */}
+              <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-medium text-gray-900">PAN Card</span>
+                  {profileData.documents.panCard && (
+                    <a 
+                      href={getFileUrl(profileData.documents.panCard)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-red-600 hover:text-red-700 flex items-center text-sm font-medium"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      View
+                    </a>
+                  )}
+                </div>
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      name="panCard"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="panCardUpload"
+                    />
+                    <label 
+                      htmlFor="panCardUpload"
+                      className="cursor-pointer flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all"
+                    >
+                      <Upload className="w-5 h-5 mr-2 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        {files.panCard ? files.panCard.name : 'Upload PAN Card'}
+                      </span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-gray-500">
+                    {profileData.documents.panCard ? (
+                      <div className="flex items-center text-green-600 text-sm">
+                        <Save className="w-4 h-4 mr-1" />
+                        Document uploaded
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-sm">
+                        <X className="w-4 h-4 mr-1 text-gray-400" />
+                        No document uploaded
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Aadhaar Card */}
+              <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-medium text-gray-900">Aadhaar Card</span>
+                  {profileData.documents.aadhaarCard && (
+                    <a 
+                      href={getFileUrl(profileData.documents.aadhaarCard)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-red-600 hover:text-red-700 flex items-center text-sm font-medium"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      View
+                    </a>
+                  )}
+                </div>
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      name="aadhaarCard"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="aadhaarCardUpload"
+                    />
+                    <label 
+                      htmlFor="aadhaarCardUpload"
+                      className="cursor-pointer flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all"
+                    >
+                      <Upload className="w-5 h-5 mr-2 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        {files.aadhaarCard ? files.aadhaarCard.name : 'Upload Aadhaar Card'}
+                      </span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-gray-500">
+                    {profileData.documents.aadhaarCard ? (
+                      <div className="flex items-center text-green-600 text-sm">
+                        <Save className="w-4 h-4 mr-1" />
+                        Document uploaded
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-sm">
+                        <X className="w-4 h-4 mr-1 text-gray-400" />
+                        No document uploaded
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

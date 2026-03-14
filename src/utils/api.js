@@ -286,6 +286,22 @@ export const commissionsAPI = {
   approveProject: (projectId) => apiRequest(`/commissions/approve-project/${projectId}`, {
     method: 'PUT',
   }),
+  
+  deleteCommission: (id) => apiRequest(`/commissions/admin/${id}`, {
+    method: 'DELETE',
+  }),
+  
+  deleteWithdrawal: (id) => apiRequest(`/commissions/admin/withdrawals/${id}`, {
+    method: 'DELETE',
+  }),
+
+  clearAllCommissions: () => apiRequest('/commissions/admin/clear-all', {
+    method: 'DELETE',
+  }),
+
+  clearAllWithdrawals: () => apiRequest('/commissions/admin/withdrawals/clear-all/bulk', {
+    method: 'DELETE',
+  }),
 };
 
 // Expense APIs

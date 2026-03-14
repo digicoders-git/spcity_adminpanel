@@ -23,7 +23,8 @@ import {
   Trophy,
   Receipt,
   Bell,
-  Check
+  Check,
+  Lock
 } from 'lucide-react';
 import { notificationsAPI } from '../utils/api_notifications';
 import { useAuth } from '../context/AuthContext';
@@ -165,6 +166,11 @@ const AssociateLayout = () => {
       title: 'Profile',
       icon: User,
       path: '/associate/profile'
+    },
+    {
+      title: 'Change Password',
+      icon: Lock,
+      path: '/associate/change-password'
     }
   ];
 

@@ -120,7 +120,7 @@ const InvoiceView = forwardRef(({ invoice }, ref) => {
                 <span className="font-bold border-b border-gray-400 flex-1 uppercase truncate">{invoice.customerName}</span>
               </div>
               <div className="flex items-center flex-1">
-                <span className="sm:mx-2 font-bold text-gray-600">S/O</span>
+                <span className="sm:mx-2 font-bold text-gray-600 shrink-0">{invoice.relation || 'S/O'}</span>
                 <span className="font-bold border-b border-gray-400 flex-1 uppercase truncate">{invoice.fatherName || '---'}</span>
               </div>
             </div>

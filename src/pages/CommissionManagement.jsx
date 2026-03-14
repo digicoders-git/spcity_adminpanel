@@ -43,7 +43,8 @@ import {
   AlertDialogOverlay,
   Input
 } from '@chakra-ui/react';
-import { CheckCircle, XCircle, Clock, DollarSign, Users, TrendingUp } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, DollarSign, Users, TrendingUp, Trash2 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { commissionsAPI, expensesAPI } from '../utils/api';
 
 const CommissionManagement = () => {
@@ -160,6 +161,114 @@ const CommissionManagement = () => {
     }
   };
 
+  const handleDeleteWithdrawal = async (id) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You want to delete this withdrawal record? This action cannot be undone.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await commissionsAPI.deleteWithdrawal(id);
+        Swal.fire(
+          'Deleted!',
+          'Withdrawal record has been deleted.',
+          'success'
+        );
+        fetchData();
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to delete record',
+          status: 'error',
+          duration: 3000
+        });
+      }
+    }
+  };
+
+  const handleDeleteCommission = async (id) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You want to delete this commission record? This action cannot be undone.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await commissionsAPI.deleteCommission(id);
+        Swal.fire(
+          'Deleted!',
+          'Commission record has been deleted.',
+          'success'
+        );
+        // We'll need a way to refresh commissions table
+        // Since it's a separate component, we'll pass a refresh prop or just refresh everything
+        fetchData();
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to delete record',
+          status: 'error',
+          duration: 3000
+        });
+      }
+    }
+  };
+
+  const handleClearAllWithdrawals = async () => {
+    const result = await Swal.fire({
+      title: 'Danger Zone!',
+      text: "Are you sure you want to PERMANENTLY delete ALL withdrawal records? This cannot be undone.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, CLEAR EVERYTHING!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await commissionsAPI.clearAllWithdrawals();
+        Swal.fire('Cleared!', 'All withdrawal records have been removed.', 'success');
+        fetchData();
+      } catch (error) {
+        toast({ title: 'Error', description: error.message, status: 'error', duration: 3000 });
+      }
+    }
+  };
+
+  const handleClearAllCommissions = async () => {
+    const result = await Swal.fire({
+      title: 'Danger Zone!',
+      text: "Are you sure you want to PERMANENTLY delete ALL commission history records? This cannot be undone.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, CLEAR EVERYTHING!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await commissionsAPI.clearAllCommissions();
+        Swal.fire('Cleared!', 'All commission records have been removed.', 'success');
+        fetchData();
+      } catch (error) {
+        toast({ title: 'Error', description: error.message, status: 'error', duration: 3000 });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" h="400px">
@@ -258,9 +367,20 @@ const CommissionManagement = () => {
 
           <TabPanels>
             <TabPanel p={0} pt={4}>
-              <div className="mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Withdrawal Requests</h2>
-                <p className="text-gray-500 text-sm">Manage associate withdrawal requests</p>
+              <div className="mb-4 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">Withdrawal Requests</h2>
+                  <p className="text-gray-500 text-sm">Manage associate withdrawal requests</p>
+                </div>
+                {withdrawals.length > 0 && (
+                  <button
+                    onClick={handleClearAllWithdrawals}
+                    className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-all font-bold text-sm border border-red-200"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Clear All Requests</span>
+                  </button>
+                )}
               </div>
               
               <Box overflowX="auto">
@@ -351,6 +471,15 @@ const CommissionManagement = () => {
                             </VStack>
                           )}
                         </Td>
+                        <Td>
+                          <button
+                            onClick={() => handleDeleteWithdrawal(withdrawal._id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Record"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </Td>
                       </Tr>
                     ))}
                   </Tbody>
@@ -366,7 +495,7 @@ const CommissionManagement = () => {
             </TabPanel>
 
             <TabPanel p={0} pt={4}>
-               <AllCommissionsTable formatCurrency={formatCurrency} />
+               <AllCommissionsTable formatCurrency={formatCurrency} onDelete={handleDeleteCommission} onClearAll={handleClearAllCommissions} />
             </TabPanel>
           </TabPanels>
         </Tabs>
@@ -501,7 +630,7 @@ const CommissionManagement = () => {
   );
 };
 
-const AllCommissionsTable = ({ formatCurrency }) => {
+const AllCommissionsTable = ({ formatCurrency, onDelete, onClearAll }) => {
   const [commissions, setCommissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
@@ -537,7 +666,23 @@ const AllCommissionsTable = ({ formatCurrency }) => {
   }
 
   return (
-    <Box overflowX="auto">
+    <Box>
+      <div className="mb-4 flex justify-between items-center">
+        <div>
+           <h2 className="text-xl font-semibold text-gray-800">Commission History</h2>
+           <p className="text-gray-500 text-sm">Full log of system generated commissions</p>
+        </div>
+        {commissions.length > 0 && (
+          <button
+            onClick={onClearAll}
+            className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-all font-bold text-sm border border-red-200"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Clear All History</span>
+          </button>
+        )}
+      </div>
+      <Box overflowX="auto">
       <Table variant="simple">
         <Thead>
           <Tr>
@@ -549,6 +694,7 @@ const AllCommissionsTable = ({ formatCurrency }) => {
             <Th>Commission</Th>
             <Th>Date</Th>
             <Th>Status</Th>
+            <Th>Actions</Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -584,6 +730,15 @@ const AllCommissionsTable = ({ formatCurrency }) => {
                     {comm.status}
                 </Badge>
               </Td>
+              <Td>
+                <button
+                  onClick={() => onDelete(comm._id)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Delete Record"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </Td>
             </Tr>
           ))}
         </Tbody>
@@ -595,7 +750,8 @@ const AllCommissionsTable = ({ formatCurrency }) => {
         </Box>
       )}
     </Box>
-  );
+  </Box>
+);
 };
 
 export default CommissionManagement;

@@ -17,6 +17,7 @@ const EMPTY_FORM = {
   customerName: '',
   customerPhone: '',
   customerEmail: '',
+  relation: 'S/O',
   fatherName: '',
   customerAddress: '',
   referenceId: '',
@@ -197,6 +198,7 @@ const InvoiceManagement = () => {
       customerName: invoice.customerName || '',
       customerPhone: invoice.customerPhone || '',
       customerEmail: invoice.customerEmail || '',
+      relation: invoice.relation || 'S/O',
       fatherName: invoice.fatherName || '',
       customerAddress: invoice.customerAddress || '',
       referenceId: invoice.referenceId || '',
@@ -493,7 +495,28 @@ const InvoiceManagement = () => {
               <div className="space-y-4">
                 <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest border-b pb-2">Client Details</h3>
                 <InputField label="Customer Name" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} required />
-                <InputField label="Father's Name (S/O)" value={formData.fatherName} onChange={e => setFormData({ ...formData, fatherName: e.target.value })} />
+                
+                <div className="space-y-1">
+                  <label className="text-xs font-black text-gray-500 uppercase tracking-wider">Relationship / Guardian Name</label>
+                  <div className="flex gap-2">
+                    <select 
+                      value={formData.relation} 
+                      onChange={e => setFormData({ ...formData, relation: e.target.value })}
+                      className="w-24 px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none font-bold bg-gray-50 text-sm"
+                    >
+                      <option value="S/O">S/O</option>
+                      <option value="W/O">W/O</option>
+                      <option value="D/O">D/O</option>
+                    </select>
+                    <input 
+                      type="text"
+                      value={formData.fatherName}
+                      onChange={e => setFormData({ ...formData, fatherName: e.target.value })}
+                      placeholder="Father / Husband / Guardian Name"
+                      className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none font-medium h-11"
+                    />
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <InputField label="Phone" value={formData.customerPhone} onChange={e => setFormData({ ...formData, customerPhone: e.target.value })} required />
                   <InputField label="Email" value={formData.customerEmail} onChange={e => setFormData({ ...formData, customerEmail: e.target.value })} type="email" />

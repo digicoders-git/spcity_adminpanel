@@ -108,6 +108,7 @@ function AppRoutes() {
         <Route path="invoices" element={<InvoiceManagement />} />
         <Route path="rewards" element={<AssociateReward />} />
         <Route path="profile" element={<AssociateProfile />} />
+        <Route path="change-password" element={<ChangePassword />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/" replace />} />

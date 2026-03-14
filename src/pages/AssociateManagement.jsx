@@ -9,6 +9,10 @@ import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';
 import { Pagination, ExportButton, usePagination } from '../utils/tableUtils.jsx';
 import { associatesAPI } from '../utils/api';
+import { FileText } from 'lucide-react';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://spcity-backend.onrender.com/api';
+const BACKEND_URL = API_BASE_URL.replace('/api', '');
 
 const COMMISSION_RANKS = [
   { name: 'STAR', rate: 5 },
@@ -324,17 +328,26 @@ const AssociateManagement = () => {
 
         {/* Associates Table */}
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full min-w-[1200px]">
+          <table className={`w-full ${user?.role === 'associate' ? 'min-w-[1600px]' : 'min-w-[1200px]'}`}>
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/50">
                 <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Associate Details</th>
                 <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Contact</th>
                 <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Role</th>
                 <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Department</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Bank Details</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">KYC Status</th>
                 <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Status</th>
                 <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Sponsor</th>
                 <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Level</th>
                 <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Date</th>
+                {user?.role === 'associate' && (
+                  <>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Team Business</th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">Leader Earning</th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider">My Income</th>
+                  </>
+                )}
                 <th className="text-left py-4 px-4 font-bold text-gray-900 uppercase text-xs tracking-wider text-right">Actions</th>
               </tr>
             </thead>
@@ -381,6 +394,27 @@ const AssociateManagement = () => {
                       <span className="text-sm text-gray-900">{associate.department || 'Sales'}</span>
                     </td>
                     <td className="py-4 px-2">
+                      <div className="text-xs space-y-1">
+                        <p className="font-semibold text-gray-900">{associate.bankDetails?.bankName || 'N/A'}</p>
+                        <p className="text-gray-600 font-mono">{associate.bankDetails?.accountNumber || associate.bankAccount || 'No Acc'}</p>
+                        <p className="text-[10px] text-gray-400 font-mono">{associate.bankDetails?.ifscCode || ''}</p>
+                      </div>
+                    </td>
+                    <td className="py-4 px-2">
+                      <div className="flex flex-col gap-1">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-center ${
+                          associate.documents?.panCard ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-500'
+                        }`}>
+                          PAN: {associate.documents?.panCard ? '✔' : '✘'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-center ${
+                          associate.documents?.aadhaarCard ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-500'
+                        }`}>
+                          AAD: {associate.documents?.aadhaarCard ? '✔' : '✘'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-2">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         associate.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
@@ -401,6 +435,13 @@ const AssociateManagement = () => {
                         <span className="text-sm text-gray-600">{new Date(associate.createdAt).toLocaleDateString()}</span>
                       </div>
                     </td>
+                    {user?.role === 'associate' && (
+                      <>
+                        <td className="py-4 px-2 text-sm font-bold text-blue-700">₹{(associate.networkSales || 0).toLocaleString()}</td>
+                        <td className="py-4 px-2 text-sm font-bold text-orange-600">₹{(associate.totalEarnings || 0).toLocaleString()}</td>
+                        <td className="py-4 px-2 text-sm font-bold text-green-600">₹{(associate.myEarningsFromReferral || 0).toLocaleString()}</td>
+                      </>
+                    )}
                     <td className="py-4 px-2">
                       <div className="flex items-center space-x-2">
                         <button 
@@ -794,6 +835,93 @@ const AssociateManagement = () => {
                       <Shield className="w-3 h-3 mr-1" />
                       Associate can login using these auto-generated credentials.
                     </p>
+                  </div>
+                </div>
+
+                {/* Financial Information */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900 border-b pb-2 flex items-center">
+                    <CreditCard className="w-5 h-5 mr-2 text-red-600" />
+                    Financial Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Account Holder</p>
+                      <p className="font-medium">{viewAssociate.bankDetails?.accountHolderName || 'Not Provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Account Number</p>
+                      <p className="font-medium font-mono">{viewAssociate.bankDetails?.accountNumber || viewAssociate.bankAccount || 'Not Provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Bank Name</p>
+                      <p className="font-medium">{viewAssociate.bankDetails?.bankName || 'Not Provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">IFSC Code</p>
+                      <p className="font-medium font-mono">{viewAssociate.bankDetails?.ifscCode || 'Not Provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Branch Name</p>
+                      <p className="font-medium">{viewAssociate.bankDetails?.branchName || 'Not Provided'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Identity Documents */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900 border-b pb-2 flex items-center">
+                    <FileText className="w-5 h-5 mr-2 text-red-600" />
+                    Identity Documents
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">PAN Number</p>
+                      <p className="font-medium font-mono">{viewAssociate.panNumber || 'Not Provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Aadhaar Number</p>
+                      <p className="font-medium font-mono">{viewAssociate.aadhaarNumber || 'Not Provided'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">PAN Card</span>
+                        {viewAssociate.documents?.panCard ? (
+                          <a 
+                            href={`${BACKEND_URL}/${viewAssociate.documents.panCard.replace(/\\/g, '/')}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-red-600 hover:text-red-700 flex items-center text-xs font-bold"
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            VIEW
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">Missing</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Aadhaar Card</span>
+                        {viewAssociate.documents?.aadhaarCard ? (
+                          <a 
+                            href={`${BACKEND_URL}/${viewAssociate.documents.aadhaarCard.replace(/\\/g, '/')}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-red-600 hover:text-red-700 flex items-center text-xs font-bold"
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            VIEW
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">Missing</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 

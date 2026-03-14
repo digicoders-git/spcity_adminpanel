@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Users, Building, DollarSign, TrendingUp, Eye, Phone, CheckCircle, Clock, MapPin, Calendar, Star, Award } from 'lucide-react';
+import { Users, User, Building, DollarSign, TrendingUp, Eye, Phone, CheckCircle, Clock, MapPin, Calendar, Star, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
@@ -51,12 +51,28 @@ const AssociateDashboard = () => {
             desc: 'Total leads assigned' 
           },
           { 
-            title: 'Total Commission', 
+            title: 'Total Revenue', 
             value: `₹${(statsData.totalCommission || 0).toLocaleString()}`, 
             icon: TrendingUp, 
             color: 'bg-gradient-to-r from-red-600 to-black', 
             change: `+${statsData.totalWithdrawn ? ((statsData.totalWithdrawn / statsData.totalCommission) * 100).toFixed(0) : 0}%`, 
-            desc: 'Gross lifetime earnings' 
+            desc: 'Total lifetime income' 
+          },
+          { 
+            title: 'Self Earning', 
+            value: `₹${(statsData.selfEarnings || 0).toLocaleString()}`, 
+            icon: User, 
+            color: 'bg-gradient-to-r from-blue-600 to-black', 
+            change: `${((statsData.selfEarnings / statsData.totalCommission) * 100 || 0).toFixed(0)}%`, 
+            desc: 'From direct sales' 
+          },
+          { 
+            title: 'Referral Income', 
+            value: `₹${(statsData.referralEarnings || 0).toLocaleString()}`, 
+            icon: Award, 
+            color: 'bg-gradient-to-r from-purple-600 to-black', 
+            change: `${((statsData.referralEarnings / statsData.totalCommission) * 100 || 0).toFixed(0)}%`, 
+            desc: 'From team sales' 
           },
           { 
             title: 'Current Advance', 
@@ -70,7 +86,7 @@ const AssociateDashboard = () => {
             title: 'Available Payout', 
             value: `₹${(statsData.availableBalance || 0).toLocaleString()}`, 
             icon: CheckCircle, 
-            color: 'bg-gradient-to-r from-red-600 to-black', 
+            color: 'bg-gradient-to-r from-green-600 to-black', 
             change: `New`, 
             desc: 'Ready for withdrawal' 
           }
@@ -321,7 +337,7 @@ const AssociateDashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat, index) => (
           <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">

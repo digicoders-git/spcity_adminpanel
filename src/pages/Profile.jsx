@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, MapPin, Calendar, Camera, Edit, Save, X, Lock, TrendingUp, Award, Building, Users } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Camera, Edit, Save, X, Lock, TrendingUp, Award, Building, Users, CreditCard, FileText, Upload, Download, ExternalLink } from 'lucide-react';
 import { authAPI, dashboardAPI, commissionsAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://spcity-backend.onrender.com/api';
+const BACKEND_URL = API_BASE_URL.replace('/api', '');
+
+const getFileUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${BACKEND_URL}/${path.replace(/\\/g, '/')}`;
+};
 
 const Profile = () => {
   const { updateUser } = useAuth();
@@ -27,7 +36,20 @@ const Profile = () => {
     status: '',
     createdAt: '',
     emailNotifications: true,
-    smsNotifications: false
+    smsNotifications: false,
+    bankDetails: {
+      accountHolderName: '',
+      accountNumber: '',
+      bankName: '',
+      ifscCode: '',
+      branchName: ''
+    },
+    panNumber: '',
+    aadhaarNumber: '',
+    documents: {
+      panCard: '',
+      aadhaarCard: ''
+    }
   });
 
   const [stats, setStats] = useState({
@@ -57,7 +79,20 @@ const Profile = () => {
           createdAt: response.data.createdAt || '',
           emailNotifications: response.data.emailNotifications !== undefined ? response.data.emailNotifications : true,
           smsNotifications: response.data.smsNotifications !== undefined ? response.data.smsNotifications : false,
-          profileImage: response.data.profileImage || ''
+          profileImage: response.data.profileImage || '',
+          bankDetails: response.data.bankDetails || {
+            accountHolderName: '',
+            accountNumber: '',
+            bankName: '',
+            ifscCode: '',
+            branchName: ''
+          },
+          panNumber: response.data.panNumber || '',
+          aadhaarNumber: response.data.aadhaarNumber || '',
+          documents: response.data.documents || {
+            panCard: '',
+            aadhaarCard: ''
+          }
         };
         setProfileData(userData);
         setOriginalData(userData);
@@ -105,11 +140,38 @@ const Profile = () => {
     fetchStats();
   }, [fetchProfile, fetchStats]);
 
+  const [files, setFiles] = useState({
+    panCard: null,
+    aadhaarCard: null
+  });
+
   const handleInputChange = (e) => {
-    setProfileData({
-      ...profileData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setProfileData({
+        ...profileData,
+        [parent]: {
+          ...profileData[parent],
+          [child]: value
+        }
+      });
+    } else {
+      setProfileData({
+        ...profileData,
+        [name]: value
+      });
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const { name, files: selectedFiles } = e.target;
+    if (selectedFiles && selectedFiles[0]) {
+      setFiles({
+        ...files,
+        [name]: selectedFiles[0]
+      });
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -126,22 +188,33 @@ const Profile = () => {
 
   const handleSave = async () => {
     try {
-      const updateData = {
-        name: profileData.name,
-        phone: profileData.phone,
-        address: profileData.address,
-        bio: profileData.bio,
-        emailNotifications: profileData.emailNotifications,
-        smsNotifications: profileData.smsNotifications
-      };
+      const formData = new FormData();
+      formData.append('name', profileData.name);
+      formData.append('phone', profileData.phone);
+      formData.append('address', profileData.address);
+      formData.append('bio', profileData.bio);
+      formData.append('panNumber', profileData.panNumber);
+      formData.append('aadhaarNumber', profileData.aadhaarNumber);
+      formData.append('bankDetails', JSON.stringify(profileData.bankDetails));
+      formData.append('emailNotifications', profileData.emailNotifications);
+      formData.append('smsNotifications', profileData.smsNotifications);
+
+      if (files.panCard) {
+        formData.append('panCard', files.panCard);
+      }
+      if (files.aadhaarCard) {
+        formData.append('aadhaarCard', files.aadhaarCard);
+      }
       
-      const response = await authAPI.updateProfile(updateData);
+      const response = await authAPI.updateProfile(formData);
       
       if (response.success) {
         toast.success('Profile updated successfully!');
         setOriginalData(profileData);
         updateUser({ name: profileData.name });
         setIsEditing(false);
+        setFiles({ panCard: null, aadhaarCard: null });
+        fetchProfile(); // Refresh to get the new file paths
       }
     } catch (error) {
       toast.error('Failed to update profile');
@@ -389,6 +462,239 @@ const Profile = () => {
                   />
                 ) : (
                   <p className="text-gray-900 py-2">{profileData.bio}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Financial Information */}
+          <div className="card mt-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <CreditCard className="w-5 h-5 mr-2 text-red-600" />
+              Financial Information
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Account Holder Name</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="bankDetails.accountHolderName"
+                    value={profileData.bankDetails.accountHolderName}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2">{profileData.bankDetails.accountHolderName || 'Not set'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Account Number</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="bankDetails.accountNumber"
+                    value={profileData.bankDetails.accountNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2 font-mono">{profileData.bankDetails.accountNumber || 'Not set'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bank Name</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="bankDetails.bankName"
+                    value={profileData.bankDetails.bankName}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2">{profileData.bankDetails.bankName || 'Not set'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">IFSC Code</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="bankDetails.ifscCode"
+                    value={profileData.bankDetails.ifscCode}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 uppercase"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2 font-mono">{profileData.bankDetails.ifscCode || 'Not set'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Branch Name</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="bankDetails.branchName"
+                    value={profileData.bankDetails.branchName}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2">{profileData.bankDetails.branchName || 'Not set'}</p>
+                )}
+              </div>
+
+              <div className="border-t md:col-span-2 pt-4 mt-2"></div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">PAN Number</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="panNumber"
+                    value={profileData.panNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 uppercase"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2 font-mono font-bold">{profileData.panNumber || 'Not set'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Aadhaar Number</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="aadhaarNumber"
+                    value={profileData.aadhaarNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2 font-mono font-bold">{profileData.aadhaarNumber || 'Not set'}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Documents */}
+          <div className="card mt-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <FileText className="w-5 h-5 mr-2 text-red-600" />
+              Identity Documents
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* PAN Card */}
+              <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-medium text-gray-900">PAN Card</span>
+                  {profileData.documents.panCard && (
+                    <a 
+                      href={getFileUrl(profileData.documents.panCard)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-red-600 hover:text-red-700 flex items-center text-sm font-medium"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      View
+                    </a>
+                  )}
+                </div>
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      name="panCard"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="panCardUpload"
+                    />
+                    <label 
+                      htmlFor="panCardUpload"
+                      className="cursor-pointer flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all"
+                    >
+                      <Upload className="w-5 h-5 mr-2 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        {files.panCard ? files.panCard.name : 'Upload PAN Card'}
+                      </span>
+                    </label>
+                    <p className="text-xs text-gray-500">Supported: PDF, JPG, PNG (Max 10MB)</p>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-gray-500">
+                    {profileData.documents.panCard ? (
+                      <div className="flex items-center text-green-600 text-sm">
+                        <Save className="w-4 h-4 mr-1" />
+                        Document uploaded
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-sm">
+                        <X className="w-4 h-4 mr-1 text-gray-400" />
+                        No document uploaded
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Aadhaar Card */}
+              <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-medium text-gray-900">Aadhaar Card</span>
+                  {profileData.documents.aadhaarCard && (
+                    <a 
+                      href={getFileUrl(profileData.documents.aadhaarCard)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-red-600 hover:text-red-700 flex items-center text-sm font-medium"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      View
+                    </a>
+                  )}
+                </div>
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      name="aadhaarCard"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="aadhaarCardUpload"
+                    />
+                    <label 
+                      htmlFor="aadhaarCardUpload"
+                      className="cursor-pointer flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all"
+                    >
+                      <Upload className="w-5 h-5 mr-2 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        {files.aadhaarCard ? files.aadhaarCard.name : 'Upload Aadhaar Card'}
+                      </span>
+                    </label>
+                    <p className="text-xs text-gray-500">Supported: PDF, JPG, PNG (Max 10MB)</p>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-gray-500">
+                    {profileData.documents.aadhaarCard ? (
+                      <div className="flex items-center text-green-600 text-sm">
+                        <Save className="w-4 h-4 mr-1" />
+                        Document uploaded
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-sm">
+                        <X className="w-4 h-4 mr-1 text-gray-400" />
+                        No document uploaded
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
