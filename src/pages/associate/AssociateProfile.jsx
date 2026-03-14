@@ -15,8 +15,6 @@ const getFileUrl = (path) => {
 
 const AssociateProfile = () => {
   const { user } = useAuth();
-  const panInputRef = useRef(null);
-  const aadhaarInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   
@@ -569,23 +567,27 @@ const AssociateProfile = () => {
                   )}
                 </div>
                 {isEditing ? (
-                  <div className="relative group">
+                  <div className="relative">
                     <input
                       type="file"
                       name="panCard"
-                      onChange={handleFileChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       id="panCardUpload"
-                      accept="image/*,.pdf,.doc,.docx"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                      accept="image/*,application/pdf,.doc,.docx"
                     />
-                    <div 
-                      className="flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg group-hover:border-red-500 group-hover:bg-red-50 transition-all"
+                    <label 
+                      htmlFor="panCardUpload"
+                      className="flex items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-red-500 hover:bg-red-50 transition-all cursor-pointer bg-white"
                     >
-                      <Upload className="w-5 h-5 mr-2 text-gray-400" />
-                      <span className="text-sm text-gray-600">
-                        {files.panCard ? files.panCard.name : 'Upload PAN Card'}
-                      </span>
-                    </div>
+                      <div className="flex flex-col items-center">
+                        <Upload className="w-8 h-8 mb-2 text-gray-400 group-hover:text-red-500" />
+                        <span className="text-sm font-medium text-gray-600 text-center">
+                          {files.panCard ? files.panCard.name : 'Click to select PAN Card'}
+                        </span>
+                        <span className="text-xs text-gray-400 mt-1">Files: JPG, PNG, PDF, DOC</span>
+                      </div>
+                    </label>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
@@ -621,23 +623,27 @@ const AssociateProfile = () => {
                   )}
                 </div>
                 {isEditing ? (
-                  <div className="relative group">
+                  <div className="relative">
                     <input
                       type="file"
                       name="aadhaarCard"
-                      onChange={handleFileChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       id="aadhaarCardUpload"
-                      accept="image/*,.pdf,.doc,.docx"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                      accept="image/*,application/pdf,.doc,.docx"
                     />
-                    <div 
-                      className="flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg group-hover:border-red-500 group-hover:bg-red-50 transition-all"
+                    <label 
+                      htmlFor="aadhaarCardUpload"
+                      className="flex items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-red-500 hover:bg-red-50 transition-all cursor-pointer bg-white"
                     >
-                      <Upload className="w-5 h-5 mr-2 text-gray-400" />
-                      <span className="text-sm text-gray-600">
-                        {files.aadhaarCard ? files.aadhaarCard.name : 'Upload Aadhaar Card'}
-                      </span>
-                    </div>
+                      <div className="flex flex-col items-center">
+                        <Upload className="w-8 h-8 mb-2 text-gray-400 group-hover:text-red-500" />
+                        <span className="text-sm font-medium text-gray-600 text-center">
+                          {files.aadhaarCard ? files.aadhaarCard.name : 'Click to select Aadhaar Card'}
+                        </span>
+                        <span className="text-xs text-gray-400 mt-1">Files: JPG, PNG, PDF, DOC</span>
+                      </div>
+                    </label>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
