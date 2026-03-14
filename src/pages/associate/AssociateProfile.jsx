@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Phone, Mail, MapPin, Calendar, Edit, Save, Camera, Award, TrendingUp, CreditCard, FileText, Upload, Download, ExternalLink, X, Building, Users, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { associatesAPI, commissionsAPI, dashboardAPI } from '../../utils/api';
@@ -15,6 +15,8 @@ const getFileUrl = (path) => {
 
 const AssociateProfile = () => {
   const { user } = useAuth();
+  const panInputRef = useRef(null);
+  const aadhaarInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   
@@ -571,19 +573,21 @@ const AssociateProfile = () => {
                     <input
                       type="file"
                       name="panCard"
+                      ref={panInputRef}
                       onChange={handleFileChange}
                       className="hidden"
                       id="panCardUpload"
+                      accept="image/*,.pdf,.doc,.docx"
                     />
-                    <label 
-                      htmlFor="panCardUpload"
+                    <div 
+                      onClick={() => panInputRef.current?.click()}
                       className="cursor-pointer flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all"
                     >
                       <Upload className="w-5 h-5 mr-2 text-gray-400" />
                       <span className="text-sm text-gray-600">
                         {files.panCard ? files.panCard.name : 'Upload PAN Card'}
                       </span>
-                    </label>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
@@ -623,19 +627,21 @@ const AssociateProfile = () => {
                     <input
                       type="file"
                       name="aadhaarCard"
+                      ref={aadhaarInputRef}
                       onChange={handleFileChange}
                       className="hidden"
                       id="aadhaarCardUpload"
+                      accept="image/*,.pdf,.doc,.docx"
                     />
-                    <label 
-                      htmlFor="aadhaarCardUpload"
+                    <div 
+                      onClick={() => aadhaarInputRef.current?.click()}
                       className="cursor-pointer flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all"
                     >
                       <Upload className="w-5 h-5 mr-2 text-gray-400" />
                       <span className="text-sm text-gray-600">
                         {files.aadhaarCard ? files.aadhaarCard.name : 'Upload Aadhaar Card'}
                       </span>
-                    </label>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
