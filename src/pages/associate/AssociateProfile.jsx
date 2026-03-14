@@ -567,27 +567,27 @@ const AssociateProfile = () => {
                   )}
                 </div>
                 {isEditing ? (
-                  <div className="relative">
+                  <div className="relative h-40 group">
                     <input
                       type="file"
                       name="panCard"
-                      id="panCardUpload"
                       onChange={handleFileChange}
-                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-[100] touch-manipulation"
+                      id="panCardUpload"
                       accept="image/*,application/pdf,.doc,.docx"
+                      style={{ WebkitTapHighlightColor: 'transparent', display: 'block' }}
                     />
-                    <label 
-                      htmlFor="panCardUpload"
-                      className="flex items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-red-500 hover:bg-red-50 transition-all cursor-pointer bg-white"
+                    <div 
+                      className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-2xl bg-white group-hover:border-red-500 group-hover:bg-red-50 transition-all pointer-events-none"
                     >
-                      <div className="flex flex-col items-center">
-                        <Upload className="w-8 h-8 mb-2 text-gray-400 group-hover:text-red-500" />
-                        <span className="text-sm font-medium text-gray-600 text-center">
-                          {files.panCard ? files.panCard.name : 'Click to select PAN Card'}
-                        </span>
-                        <span className="text-xs text-gray-400 mt-1">Files: JPG, PNG, PDF, DOC</span>
+                      <div className="p-3 bg-red-50 rounded-full mb-3">
+                        <Upload className="w-8 h-8 text-red-500" />
                       </div>
-                    </label>
+                      <span className="text-base font-bold text-gray-900 mb-1">
+                        {files.panCard ? files.panCard.name : 'Tap to select PAN Card'}
+                      </span>
+                      <p className="text-xs text-gray-500">JPG, PNG, PDF, DOC (Max 10MB)</p>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
@@ -623,27 +623,27 @@ const AssociateProfile = () => {
                   )}
                 </div>
                 {isEditing ? (
-                  <div className="relative">
+                  <div className="relative h-40 group">
                     <input
                       type="file"
                       name="aadhaarCard"
-                      id="aadhaarCardUpload"
                       onChange={handleFileChange}
-                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-[100] touch-manipulation"
+                      id="aadhaarCardUpload"
                       accept="image/*,application/pdf,.doc,.docx"
+                      style={{ WebkitTapHighlightColor: 'transparent', display: 'block' }}
                     />
-                    <label 
-                      htmlFor="aadhaarCardUpload"
-                      className="flex items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-red-500 hover:bg-red-50 transition-all cursor-pointer bg-white"
+                    <div 
+                      className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-2xl bg-white group-hover:border-red-500 group-hover:bg-red-50 transition-all pointer-events-none"
                     >
-                      <div className="flex flex-col items-center">
-                        <Upload className="w-8 h-8 mb-2 text-gray-400 group-hover:text-red-500" />
-                        <span className="text-sm font-medium text-gray-600 text-center">
-                          {files.aadhaarCard ? files.aadhaarCard.name : 'Click to select Aadhaar Card'}
-                        </span>
-                        <span className="text-xs text-gray-400 mt-1">Files: JPG, PNG, PDF, DOC</span>
+                      <div className="p-3 bg-blue-50 rounded-full mb-3">
+                        <Upload className="w-8 h-8 text-blue-500" />
                       </div>
-                    </label>
+                      <span className="text-base font-bold text-gray-900 mb-1">
+                        {files.aadhaarCard ? files.aadhaarCard.name : 'Tap to select Aadhaar Card'}
+                      </span>
+                      <p className="text-xs text-gray-500">JPG, PNG, PDF, DOC (Max 10MB)</p>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
