@@ -14,7 +14,9 @@ const getFileUrl = (path) => {
 };
 
 const AssociateProfile = () => {
-  const { user } = useAuth();
+  const { user } = useAuth(); // Keeping for context if needed elsewhere, otherwise would remove
+  const panInputRef = useRef(null);
+  const aadhaarInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   
@@ -567,27 +569,31 @@ const AssociateProfile = () => {
                   )}
                 </div>
                 {isEditing ? (
-                  <div className="relative h-40 group">
+                  <div className="relative">
+                    {/* Native Hidden Input - Not display:none for better mobile accessibility */}
                     <input
+                      ref={panInputRef}
                       type="file"
                       name="panCard"
                       onChange={handleFileChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-[100] touch-manipulation"
+                      className="sr-only"
                       id="panCardUpload"
-                      accept="image/*,application/pdf,.doc,.docx"
-                      style={{ WebkitTapHighlightColor: 'transparent', display: 'block' }}
+                      accept="image/jpeg,image/png,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     />
-                    <div 
-                      className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-2xl bg-white group-hover:border-red-500 group-hover:bg-red-50 transition-all pointer-events-none"
+                    {/* Native Button Trigger - Essential for Mobile Tap Reliability */}
+                    <button 
+                      type="button"
+                      onClick={() => panInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-2xl bg-white hover:border-red-500 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all active:scale-[0.98] active:bg-gray-50 touch-manipulation"
                     >
-                      <div className="p-3 bg-red-50 rounded-full mb-3">
+                      <div className="p-3 bg-red-50 rounded-full mb-3 pointer-events-none">
                         <Upload className="w-8 h-8 text-red-500" />
                       </div>
-                      <span className="text-base font-bold text-gray-900 mb-1">
+                      <span className="text-base font-bold text-gray-900 mb-1 pointer-events-none">
                         {files.panCard ? files.panCard.name : 'Tap to select PAN Card'}
                       </span>
-                      <p className="text-xs text-gray-500">JPG, PNG, PDF, DOC (Max 10MB)</p>
-                    </div>
+                      <p className="text-xs text-gray-500 pointer-events-none">JPG, PNG, PDF, DOC (Max 10MB)</p>
+                    </button>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
@@ -623,27 +629,31 @@ const AssociateProfile = () => {
                   )}
                 </div>
                 {isEditing ? (
-                  <div className="relative h-40 group">
+                  <div className="relative">
+                    {/* Native Hidden Input */}
                     <input
+                      ref={aadhaarInputRef}
                       type="file"
                       name="aadhaarCard"
                       onChange={handleFileChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-[100] touch-manipulation"
+                      className="sr-only"
                       id="aadhaarCardUpload"
-                      accept="image/*,application/pdf,.doc,.docx"
-                      style={{ WebkitTapHighlightColor: 'transparent', display: 'block' }}
+                      accept="image/jpeg,image/png,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     />
-                    <div 
-                      className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-2xl bg-white group-hover:border-red-500 group-hover:bg-red-50 transition-all pointer-events-none"
+                    {/* Native Button Trigger */}
+                    <button 
+                      type="button"
+                      onClick={() => aadhaarInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-2xl bg-white hover:border-red-500 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all active:scale-[0.98] active:bg-gray-50 touch-manipulation"
                     >
-                      <div className="p-3 bg-blue-50 rounded-full mb-3">
+                      <div className="p-3 bg-blue-50 rounded-full mb-3 pointer-events-none">
                         <Upload className="w-8 h-8 text-blue-500" />
                       </div>
-                      <span className="text-base font-bold text-gray-900 mb-1">
+                      <span className="text-base font-bold text-gray-900 mb-1 pointer-events-none">
                         {files.aadhaarCard ? files.aadhaarCard.name : 'Tap to select Aadhaar Card'}
                       </span>
-                      <p className="text-xs text-gray-500">JPG, PNG, PDF, DOC (Max 10MB)</p>
-                    </div>
+                      <p className="text-xs text-gray-500 pointer-events-none">JPG, PNG, PDF, DOC (Max 10MB)</p>
+                    </button>
                   </div>
                 ) : (
                   <div className="flex items-center text-gray-500">
