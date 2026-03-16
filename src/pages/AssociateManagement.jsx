@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';
-import { Pagination, ExportButton, usePagination } from '../utils/tableUtils.jsx';
+import { Pagination, ExportButton } from '../utils/tableUtils.jsx';
 import { associatesAPI } from '../utils/api';
 import { FileText } from 'lucide-react';
 
@@ -41,6 +41,7 @@ const AssociateManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewAssociate, setViewAssociate] = useState(null);
+  const [pagination, setPagination] = useState({ current: 1, pages: 1, total: 0 });
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -75,11 +76,25 @@ const AssociateManagement = () => {
   };
 
   // ================= FETCH ASSOCIATES =================
-  const fetchAssociates = async () => {
+  const fetchAssociates = async (page = 1) => {
     try {
       setLoading(true);
-      const res = await associatesAPI.getAll();
-      setAssociates(res.data || res);
+      const params = {
+        page,
+        limit: 10,
+        ...(searchTerm && { search: searchTerm })
+      };
+      const res = await associatesAPI.getAll(params);
+      if (res.success) {
+        setAssociates(res.data);
+        setPagination({
+          current: res.pagination.current,
+          pages: res.pagination.pages,
+          total: res.pagination.total
+        });
+      } else {
+        setAssociates(res); // Fallback for old API format if any
+      }
     } catch (err) {
       toast.error(err.message || 'Failed to load associates');
     } finally {
@@ -88,18 +103,24 @@ const AssociateManagement = () => {
   };
 
   useEffect(() => {
-    fetchAssociates();
+    fetchAssociates(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ================= FILTER + PAGINATION =================
-  const filteredAssociates = associates.filter(a =>
-    a.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.phone?.includes(searchTerm) ||
-    a.role?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchAssociates(1);
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
-  const { currentPage, totalPages, currentData, goToPage, totalItems } =
-    usePagination(filteredAssociates, 10);
+  // No longer needed: client-side filtering and pagination
+  // Pagination handling
+  const handlePageChange = (page) => {
+    fetchAssociates(page);
+  };
 
   // ================= HANDLERS =================
   const handleInputChange = (e) => {
@@ -222,10 +243,7 @@ const AssociateManagement = () => {
       }
 
       setShowModal(false);
-      fetchAssociates();
-
-      setShowModal(false);
-      fetchAssociates();
+      fetchAssociates(pagination.current);
 
     } catch (err) {
       console.error('Associate operation error:', err);
@@ -258,7 +276,7 @@ const AssociateManagement = () => {
       try {
         await associatesAPI.delete(id);
         toast.success('Associate deleted');
-        fetchAssociates();
+        fetchAssociates(pagination.current);
       } catch (err) {
         toast.error(err.message);
       }
@@ -319,7 +337,7 @@ const AssociateManagement = () => {
           </div>
           <div className="w-full md:w-auto">
             <ExportButton 
-              data={filteredAssociates} 
+              data={associates} 
               filename="associates"
               headers={['Name', 'Phone', 'Email', 'Role', 'Department', 'Status', 'Date']}
             />
@@ -358,8 +376,8 @@ const AssociateManagement = () => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
                   </td>
                 </tr>
-              ) : currentData.length > 0 ? (
-                currentData.map((associate) => (
+              ) : associates.length > 0 ? (
+                associates.map((associate) => (
                   <tr key={associate._id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-4 px-2">
                       <div className="flex items-center space-x-3">
@@ -507,16 +525,17 @@ const AssociateManagement = () => {
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={goToPage}
-            itemsPerPage={10}
-            totalItems={totalItems}
-          />
+        {/* Pagination Section */}
+        {pagination.pages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/30">
+            <Pagination
+              currentPage={pagination.current}
+              totalPages={pagination.pages}
+              onPageChange={handlePageChange}
+              itemsPerPage={10}
+              totalItems={pagination.total}
+            />
+          </div>
         )}
       </div>
 
