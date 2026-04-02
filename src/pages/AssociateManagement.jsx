@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Users, Plus, Edit, Trash2, Eye, Phone, Mail,
-  Calendar, Search, Key, Shield, UserCheck, EyeOff, CreditCard, DollarSign
+  Calendar, Search, Key, Shield, UserCheck, EyeOff, CreditCard, DollarSign, ChevronRight, Home
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -49,6 +49,41 @@ const AssociateManagement = () => {
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Network drill-down modal
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  const [networkList, setNetworkList] = useState([]);
+  const [networkLoading, setNetworkLoading] = useState(false);
+  const [networkBreadcrumb, setNetworkBreadcrumb] = useState([]); // [{id, name}]
+
+  const openNetworkModal = async (associate) => {
+    setShowNetworkModal(true);
+    setNetworkBreadcrumb([{ id: associate._id, name: associate.name }]);
+    await loadDownline(associate._id);
+  };
+
+  const loadDownline = async (associateId) => {
+    try {
+      setNetworkLoading(true);
+      const res = await associatesAPI.getDownline(associateId);
+      setNetworkList(res.success ? res.data : []);
+    } catch {
+      toast.error('Failed to load network');
+    } finally {
+      setNetworkLoading(false);
+    }
+  };
+
+  const handleNetworkDrillDown = async (associate) => {
+    setNetworkBreadcrumb(prev => [...prev, { id: associate._id, name: associate.name }]);
+    await loadDownline(associate._id);
+  };
+
+  const handleBreadcrumbClick = async (index) => {
+    const crumb = networkBreadcrumb[index];
+    setNetworkBreadcrumb(prev => prev.slice(0, index + 1));
+    await loadDownline(crumb.id);
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -440,12 +475,22 @@ const AssociateManagement = () => {
                       </span>
                     </td>
                     <td className="py-4 px-2">
-                      <span className="text-sm font-semibold text-gray-800">{associate.sponsor?.name || 'Admin'}</span>
+                      <div>
+                        <span className="text-sm font-semibold text-gray-800">{associate.sponsor?.name || 'Admin'}</span>
+                        {associate.sponsor?.username && (
+                          <p className="text-xs text-gray-400">@{associate.sponsor.username}</p>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-2">
-                       <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold text-sm shadow-sm ring-1 ring-blue-200">
-                         {associate.level || 1}
-                       </span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold text-sm shadow-sm ring-1 ring-blue-200">
+                          {associate.level || 1}
+                        </span>
+                        {associate.level > 1 && (
+                          <span className="text-[10px] text-gray-400">L{associate.level}</span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-2">
                       <div className="flex items-center space-x-2">
@@ -468,6 +513,13 @@ const AssociateManagement = () => {
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => openNetworkModal(associate)}
+                          className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                          title="View Network (who they added)"
+                        >
+                          <Users className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleEditAssociate(associate)}
@@ -788,8 +840,11 @@ const AssociateManagement = () => {
                       <div className="flex items-center space-x-3">
                         <Users className="w-5 h-5 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">Sponsor</p>
+                          <p className="text-sm text-gray-600">Added By (Sponsor)</p>
                           <p className="font-medium">{viewAssociate.sponsor?.name || 'Admin'}</p>
+                          {viewAssociate.sponsor?.username && (
+                            <p className="text-xs text-gray-400">@{viewAssociate.sponsor.username}</p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
@@ -976,6 +1031,104 @@ const AssociateManagement = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Network Drill-Down Modal */}
+      {showNetworkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Network Tree</h2>
+                {/* Breadcrumb */}
+                <div className="flex items-center gap-1 mt-1 flex-wrap">
+                  {networkBreadcrumb.map((crumb, idx) => (
+                    <React.Fragment key={crumb.id}>
+                      {idx > 0 && <ChevronRight className="w-4 h-4 text-gray-400" />}
+                      <button
+                        onClick={() => handleBreadcrumbClick(idx)}
+                        className={`text-sm font-medium ${
+                          idx === networkBreadcrumb.length - 1
+                            ? 'text-red-600 cursor-default'
+                            : 'text-blue-600 hover:underline'
+                        }`}
+                      >
+                        {idx === 0 && <span className="inline-flex items-center gap-1">{crumb.name}</span>}
+                        {idx > 0 && crumb.name}
+                      </button>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+              <button onClick={() => setShowNetworkModal(false)} className="p-2 hover:bg-gray-100 rounded-xl text-2xl">×</button>
+            </div>
+
+            <div className="overflow-auto flex-1 p-4">
+              {networkLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                </div>
+              ) : networkList.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-14 h-14 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 font-medium">No associates added by {networkBreadcrumb[networkBreadcrumb.length - 1]?.name}</p>
+                </div>
+              ) : (
+                <table className="w-full min-w-[700px]">
+                  <thead>
+                    <tr className="bg-gray-50 border-b">
+                      <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase">Name</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase">Phone</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase">Role</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase">Status</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase">Level</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase">Joined</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase">Their Network</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {networkList.map(member => (
+                      <tr key={member._id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-r from-red-600 to-black flex items-center justify-center text-white font-bold text-sm">
+                              {member.name.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{member.name}</p>
+                              <p className="text-xs text-gray-400">@{member.username}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-700">{member.phone}</td>
+                        <td className="py-3 px-4 text-sm text-gray-700">{member.role || 'Sales Executive'}</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            member.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>{member.status}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-800 font-bold text-xs">
+                            {member.level || 1}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-500">{new Date(member.createdAt).toLocaleDateString()}</td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => handleNetworkDrillDown(member)}
+                            className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            View Network <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>

@@ -79,6 +79,8 @@ export const associatesAPI = {
     return apiRequest(`/associates${query ? `?${query}` : ''}`);
   },
   
+  getDownline: (id) => apiRequest(`/associates/${id}/downline`),
+  
   getById: (id) => apiRequest(`/associates/${id}`),
   
   create: (associateData) => apiRequest('/associates', {
